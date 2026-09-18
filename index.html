@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VELLAR — Digital Republic</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #08090d;
+        color: #f1f1f1;
+        font-family: Arial, Helvetica, sans-serif;
+        overflow: hidden;
+    }
+
+    button {
+        font: inherit;
+    }
+
+    .app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* TOP BAR */
+
+    .topbar {
+        height: 74px;
+        background: #0e1016;
+        border-bottom: 1px solid #252936;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px;
+        flex-shrink: 0;
+    }
+
+    .logo {
+        font-size: 25px;
+        font-weight: 800;
+        letter-spacing: 5px;
+    }
+
+    .subtitle {
+        color: #777d8d;
+        font-size: 11px;
+        margin-top: 4px;
+        letter-spacing: 1px;
+    }
+
+    .stats {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .stat {
+        background: #151821;
+        border: 1px solid #292d3a;
+        border-radius: 10px;
+        padding: 9px 14px;
+        min-width: 125px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+        color: #777d8d;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    .vel {
+        color: #d8b45b;
+    }
+
+    /* MAIN */
+
+    .main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 310px;
+        min-height: 0;
+    }
+
+    /* MAP */
+
+    .map-area {
+        position: relative;
+        padding: 20px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .map-header {
+        position: absolute;
+        top: 20px;
+        left: 24px;
+        z-index: 10;
+    }
+
+    .map-title {
+        font-size: 19px;
+        font-weight: 700;
+    }
+
+    .map-description {
+        color: #737988;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .map {
+        width: 100%;
+        height: 100%;
+        min-height: 500px;
+        position: relative;
+        margin-top: 0;
+        background:
+            radial-gradient(circle at 50% 48%, #252c31 0%, #14191e 42%, #0c1014 75%);
+        border: 1px solid #2a2e38;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .map::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: .2;
+        background-image:
+            linear-gradient(#6d747f 1px, transparent 1px),
+            linear-gradient(90deg, #6d747f 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    .territory {
+        position: absolute;
+        left: 8%;
+        top: 14%;
+        width: 72%;
+        height: 72%;
+        border: 2px solid #6c7078;
+        border-radius: 42% 52% 45% 57%;
+        background: rgba(110, 120, 116, .10);
+        box-shadow:
+            inset 0 0 80px rgba(255,255,255,.025),
+            0 0 80px rgba(0,0,0,.5);
+    }
+
+    .territory-label {
+        position: absolute;
+        top: 48%;
+        left: 40%;
+        transform: translate(-50%, -50%);
+        font-size: 48px;
+        font-weight: 800;
+        letter-spacing: 12px;
+        color: rgba(255,255,255,.07);
+        pointer-events: none;
+    }
+
+    .land {
+        position: absolute;
+        border: 1px solid rgba(216,180,91,.6);
+        background: rgba(216,180,91,.16);
+        cursor: pointer;
+        transition: .2s;
+        z-index: 4;
+    }
+
+    .land:hover {
+        background: rgba(216,180,91,.3);
+        box-shadow: 0 0 15px rgba(216,180,91,.25);
+    }
+
+    .land.owned {
+        background: rgba(216,180,91,.35);
+    }
+
+    .land-number {
+        position: absolute;
+        left: 4px;
+        top: 3px;
+        font-size: 8px;
+        color: #eee;
+    }
+
+    /* MAP OBJECTS */
+
+    .object {
+        position: absolute;
+        z-index: 5;
+        width: 42px;
+        height: 42px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+        background: #13161d;
+        border: 1px solid #353a48;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .object:hover {
+        transform: scale(1.1);
+        border-color: #d8b45b;
+    }
+
+    .object.mine {
+        border-color: #856d3b;
+    }
+
+    .object.farm {
+        border-color: #4f7457;
+    }
+
+    .object.factory {
+        border-color: #576a83;
+    }
+
+    .activity {
+        position: absolute;
+        z-index: 3;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #d8b45b;
+        box-shadow: 0 0 12px #d8b45b;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%,100% { opacity:.3; transform:scale(.8); }
+        50% { opacity:1; transform:scale(1.4); }
+    }
+
+    /* SIDE PANEL */
+
+    .sidebar {
+        background: #0e1016;
+        border-left: 1px solid #252936;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .nav {
+        padding: 14px;
+        border-bottom: 1px solid #252936;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+    }
+
+    .nav button {
+        border: 0;
+        background: transparent;
+        color: #777d8d;
+        padding: 9px 2px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 10px;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+        background: #1a1d26;
+        color: #fff;
+    }
+
+    .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .section {
+        display: none;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    h2 {
+        margin: 0 0 5px;
+        font-size: 21px;
+    }
+
+    .section-desc {
+        color: #777d8d;
+        font-size: 12px;
+        line-height: 1.5;
+        margin-bottom: 18px;
+    }
+
+    .card {
+        background: #151821;
+        border: 1px solid #292d3a;
+        border-radius: 10px;
+        padding: 13px;
+        margin-bottom: 10px;
+    }
+
+    .card-title {
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .card-info {
+        color: #858b9b;
+        font-size: 11px;
+        line-height: 1.5;
+        margin: 7px 0;
+    }
+
+    .price {
+        color: #d8b45b;
+        font-weight: 700;
+    }
+
+    .buy {
+        width: 100%;
+        border: 1px solid #66552d;
+        background: #272216;
+        color: #e5c875;
+        padding: 9px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-weight: 700;
+        margin-top: 5px;
+    }
+
+    .buy:hover {
+        background: #3a301a;
+    }
+
+    .buy:disabled {
+        opacity: .35;
+        cursor: not-allowed;
+    }
+
+    .green {
+        color: #70c48a;
+    }
+
+    .red {
+        color: #d46d6d;
+    }
+
+    .blue {
+        color: #7da5d8;
+    }
+
+    .id-box {
+        text-align: center;
+        padding: 22px 10px;
+        background:
+            linear-gradient(135deg, #181b24, #101218);
+        border: 1px solid #303541;
+        border-radius: 12px;
+        margin-bottom: 14px;
+    }
+
+    .id-label {
+        color: #777d8d;
+        font-size: 10px;
+        letter-spacing: 2px;
+    }
+
+    .citizen-id {
+        font-size: 31px;
+        font-weight: 800;
+        margin-top: 8px;
+        letter-spacing: 3px;
+    }
+
+    .badge {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 9px;
+        border-radius: 20px;
+        background: #242934;
+        color: #aaa;
+        font-size: 10px;
+    }
+
+    .event {
+        border-left: 3px solid #d8b45b;
+        padding-left: 12px;
+        margin-bottom: 16px;
+    }
+
+    .event-title {
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .event-time {
+        color: #777d8d;
+        font-size: 10px;
+    }
+
+    .progress {
+        height: 5px;
+        background: #292d38;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 63%;
+        background: #d8b45b;
+    }
+
+    /* MODAL */
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.72);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-box {
+        width: min(440px, 92vw);
+        background: #11141b;
+        border: 1px solid #343947;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 20px 80px rgba(0,0,0,.6);
+    }
+
+    .modal-title {
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .modal-text {
+        color: #8a90a0;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-bottom: 18px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .modal-actions button {
+        flex: 1;
+        padding: 11px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .confirm {
+        background: #d8b45b;
+        color: #111;
+        border: 0;
+        font-weight: 800;
+    }
+
+    .cancel {
+        background: #191c24;
+        color: #aaa;
+        border: 1px solid #303440;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 850px) {
+        body {
+            overflow: auto;
+        }
+
+        .app {
+            height: auto;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            height: auto;
+            min-height: 70px;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .stats {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .stat {
+            min-width: 110px;
+        }
+
+        .main {
+            display: block;
+        }
+
+        .map-area {
+            height: 560px;
+        }
+
+        .sidebar {
+            border-left: 0;
+            border-top: 1px solid #252936;
+            min-height: 600px;
+        }
+
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="topbar">
+
+        <div>
+            <div class="logo">VELLAR</div>
+            <div class="subtitle">DIGITAL REPUBLIC</div>
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                <div class="stat-label">Баланс</div>
+                <div class="stat-value vel" id="velBalance">0 VEL</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-label">Доход</div>
+                <div class="stat-value green" id="velIncome">+0 / час</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-label">Земля</div>
+                <div class="stat-value" id="landAmount">0 га</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-label">Экономика</div>
+                <div class="stat-value" id="economyValue">63.4</div>
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <main class="main">
+
+        <section class="map-area">
+
+            <div class="map">
+
+                <div class="map-header">
+                    <div class="map-title">Территория Vellar</div>
+                    <div class="map-description">
+                        1000 га цифровой территории
+                    </div>
+                </div>
+
+                <div class="territory">
+                    <div class="territory-label">VELLAR</div>
+                </div>
+
+                <!-- Активность государства -->
+
+                <div class="activity" style="left:30%;top:36%"></div>
+                <div class="activity" style="left:43%;top:29%;animation-delay:.5s"></div>
+                <div class="activity" style="left:58%;top:54%;animation-delay:1s"></div>
+                <div class="activity" style="left:66%;top:38%;animation-delay:1.4s"></div>
+                <div class="activity" style="left:39%;top:65%;animation-delay:.8s"></div>
+
+                <!-- Объекты -->
+
+                <div class="object mine" style="left:26%;top:47%" title="Шахта">
+                    ⛏
+                </div>
+
+                <div class="object mine" style="left:57%;top:29%" title="Шахта">
+                    ⛏
+                </div>
+
+                <div class="object farm" style="left:48%;top:63%" title="Ферма">
+                    🌾
+                </div>
+
+                <div class="object factory" style="left:68%;top:51%" title="Производство">
+                    🏭
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <aside class="sidebar">
+
+            <nav class="nav">
+
+                <button class="active" onclick="openSection('city', this)">
+                    🏛<br>Мэрия
+                </button>
+
+                <button onclick="openSection('events', this)">
+                    ⚡<br>Ивенты
+                </button>
+
+                <button onclick="openSection('market', this)">
+                    🏪<br>Рынок
+                </button>
+
+                <button onclick="openSection('work', this)">
+                    👷<br>Работа
+                </button>
+
+                <button onclick="openSection('bank', this)">
+                    🏦<br>Банк
+                </button>
+
+            </nav>
+
+
+            <div class="content">
+
+
+                <!-- МЭРИЯ -->
+
+                <section class="section active" id="city">
+
+                    <h2>Мэрия</h2>
+
+                    <div class="section-desc">
+                        Административный центр государства Vellar.
+                    </div>
+
+                    <div class="id-box">
+
+                        <div class="id-label">
+                            CITIZEN ID
+                        </div>
+
+                        <div class="citizen-id" id="citizenId">
+                            НЕ ПОЛУЧЕН
+                        </div>
+
+                        <div class="badge" id="citizenStatus">
+                            НЕ ГРАЖДАНИН
+                        </div>
+
+                    </div>
+
+
+                    <div id="citizenshipCard">
+
+                        <div class="card">
+
+                            <div class="card-title">
+                                Стать гражданином Vellar
+                            </div>
+
+                            <div class="card-info">
+                                Получите уникальный Citizen ID и
+                                полный доступ к экономике государства.
+                            </div>
+
+                            <div class="card-info">
+                                Стоимость:
+                                <span class="price">$5</span>
+                            </div>
+
+                            <button class="buy"
+                                    onclick="buyCitizenship()">
+                                ПОЛУЧИТЬ ГРАЖДАНСТВО
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Экономика Vellar
+                        </div>
+
+                        <div class="card-info">
+                            Индекс экономики государства:
+                            <b id="economyText">63.4</b>
+                        </div>
+
+                        <div class="progress">
+                            <div class="progress-bar"
+                                 id="economyBar"></div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Казна
+                        </div>
+
+                        <div class="card-info">
+                            Государственный налог:
+                            <b>10%</b>
+                        </div>
+
+                        <div class="card-info">
+                            Все экономические операции
+                            способствуют формированию казны.
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ИВЕНТЫ -->
+
+                <section class="section" id="events">
+
+                    <h2>Ивенты</h2>
+
+                    <div class="section-desc">
+                        События государства. Модуль отделён от
+                        основной экономики и может заменяться.
+                    </div>
+
+                    <div class="event">
+
+                        <div class="event-title">
+                            Экономическая активность
+                        </div>
+
+                        <div class="card-info">
+                            Жители Vellar активно развивают
+                            государство.
+                        </div>
+
+                        <div class="event-time">
+                            Активно сейчас
+                        </div>
+
+                    </div>
+
+
+                    <div class="event">
+
+                        <div class="event-title">
+                            Первое развитие
+                        </div>
+
+                        <div class="card-info">
+                            Государство получило новый
+                            производственный потенциал.
+                        </div>
+
+                        <div class="event-time">
+                            Система
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Следующий ивент
+                        </div>
+
+                        <div class="card-info">
+                            События будут генерироваться
+                            системой по мере развития государства.
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- РЫНОК -->
+
+                <section class="section" id="market">
+
+                    <h2>Рынок</h2>
+
+                    <div class="section-desc">
+                        Покупка цифровой территории.
+                        Цены указаны в USD.
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Участок 1 га
+                        </div>
+
+                        <div class="card-info">
+                            Стоимость:
+                            <span class="price">$10</span>
+                            <br>
+                            Доход:
+                            <span class="green">
+                                +2 VEL/час
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="buyLand(1,10)">
+                            КУПИТЬ ЗА $10
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Участок 2 га
+                        </div>
+
+                        <div class="card-info">
+                            Стоимость:
+                            <span class="price">$20</span>
+                            <br>
+                            Доход:
+                            <span class="green">
+                                +4 VEL/час
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="buyLand(2,20)">
+                            КУПИТЬ ЗА $20
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Участок 4 га
+                        </div>
+
+                        <div class="card-info">
+                            Стоимость:
+                            <span class="price">$40</span>
+                            <br>
+                            Доход:
+                            <span class="green">
+                                +8 VEL/час
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="buyLand(4,40)">
+                            КУПИТЬ ЗА $40
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Курс VEL
+                        </div>
+
+                        <div class="card-info">
+                            Тестовый ориентир:
+                            <b>1 USD ≈ 500 VEL</b>
+                        </div>
+
+                        <div class="card-info">
+                            Реальный курс в этой версии
+                            отсутствует.
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- РАБОТА -->
+
+                <section class="section" id="work">
+
+                    <h2>Работа</h2>
+
+                    <div class="section-desc">
+                        Рынок труда Vellar.
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            ⛏ Шахта
+                        </div>
+
+                        <div class="card-info">
+                            Необходимо:
+                            <b>100 кликов/сутки</b>
+                            <br>
+                            Зарплата:
+                            <span class="green">
+                                30 VEL/день
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="work('mine')">
+                            РАБОТАТЬ
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            🏭 Производство
+                        </div>
+
+                        <div class="card-info">
+                            Необходимо:
+                            <b>100 кликов/сутки</b>
+                            <br>
+                            Зарплата:
+                            <span class="green">
+                                40 VEL/день
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="work('factory')">
+                            РАБОТАТЬ
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            🌾 Ферма
+                        </div>
+
+                        <div class="card-info">
+                            Необходимо:
+                            <b>100 кликов/сутки</b>
+                            <br>
+                            Зарплата:
+                            <span class="green">
+                                25 VEL/день
+                            </span>
+                        </div>
+
+                        <button class="buy"
+                                onclick="work('farm')">
+                            РАБОТАТЬ
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Сегодня
+                        </div>
+
+                        <div class="card-info">
+                            Выполнено кликов:
+                            <b id="clickCount">0 / 100</b>
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- БАНК -->
+
+                <section class="section" id="bank">
+
+                    <h2>Банк</h2>
+
+                    <div class="section-desc">
+                        Финансовая система Vellar.
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Депозит
+                        </div>
+
+                        <div class="card-info">
+                            Процентная ставка:
+                            <span class="green">
+                                10% годовых
+                            </span>
+                        </div>
+
+                        <div class="card-info">
+                            Внесено:
+                            <b id="depositValue">0 VEL</b>
+                        </div>
+
+                        <button class="buy"
+                                onclick="deposit()">
+                            ПОЛОЖИТЬ 100 VEL
+                        </button>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Доход по депозиту
+                        </div>
+
+                        <div class="card-info">
+                            Начисление производится
+                            автоматически.
+                        </div>
+
+                        <div class="card-info">
+                            APY:
+                            <b>10%</b>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Кредит под SA
+                        </div>
+
+                        <div class="card-info">
+                            В следующей версии можно будет
+                            блокировать SA в качестве залога,
+                            получать VEL и возвращать SA после
+                            полного погашения кредита.
+                        </div>
+
+                        <button class="buy" disabled>
+                            СКОРО
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+            </div>
+
+        </aside>
+
+    </main>
+
+</div>
+
+
+<!-- MODAL -->
+
+<div class="modal" id="modal">
+
+    <div class="modal-box">
+
+        <div class="modal-title" id="modalTitle">
+            Подтверждение
+        </div>
+
+        <div class="modal-text" id="modalText">
+        </div>
+
+        <div class="modal-actions">
+
+            <button class="cancel"
+                    onclick="closeModal()">
+                ОТМЕНА
+            </button>
+
+            <button class="confirm"
+                    id="modalConfirm">
+                ПОДТВЕРДИТЬ
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   VELLAR ECONOMY CONFIGURATION
+   Все основные экономические параметры находятся здесь.
+   ========================================================= */
+
+const ECONOMY = {
+
+    citizenshipPriceUSD: 5,
+
+    land: {
+        one: {
+            hectares: 1,
+            priceUSD: 10,
+            velPerHour: 2
+        },
+
+        two: {
+            hectares: 2,
+            priceUSD: 20,
+            velPerHour: 4
+        },
+
+        four: {
+            hectares: 4,
+            priceUSD: 40,
+            velPerHour: 8
+        }
+    },
+
+    velPerUSD: 500,
+
+    bank: {
+        annualRate: 0.10
+    },
+
+    taxRate: 0.10,
+
+    buildings: {
+
+        farm: {
+            priceVEL: 500,
+            salary: 25
+        },
+
+        factory: {
+            priceVEL: 1500,
+            salary: 40
+        },
+
+        mine: {
+            priceVEL: 4000,
+            salary: 30
+        }
+
+    }
+
+};
+
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+
+let player = {
+
+    citizen: false,
+
+    citizenId: null,
+
+    vel: 0,
+
+    land: 0,
+
+    incomePerHour: 0,
+
+    deposit: 0,
+
+    farms: 0,
+
+    factories: 0,
+
+    mines: 0,
+
+    clicksToday: 0,
+
+    lastTick: Date.now(),
+
+    economy: 63.4
+
+};
+
+
+/* =========================================================
+   LOAD SAVE
+   ========================================================= */
+
+function loadGame() {
+
+    const saved =
+        localStorage.getItem("vellar_save");
+
+    if (saved) {
+
+        try {
+
+            player = {
+                ...player,
+                ...JSON.parse(saved)
+            };
+
+        } catch (e) {
+
+            console.log(
+                "Ошибка загрузки сохранения"
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+function saveGame() {
+
+    localStorage.setItem(
+        "vellar_save",
+        JSON.stringify(player)
+    );
+
+}
+
+
+/* =========================================================
+   CITIZENSHIP
+   ========================================================= */
+
+function buyCitizenship() {
+
+    if (player.citizen) {
+
+        alert(
+            "Вы уже являетесь гражданином Vellar."
+        );
+
+        return;
+    }
+
+    showModal(
+
+        "Гражданство Vellar",
+
+        "Тестовая покупка гражданства за $5. " +
+        "После подтверждения будет создан уникальный Citizen ID.",
+
+        function() {
+
+            player.citizen = true;
+
+            player.citizenId =
+                generateCitizenId();
+
+            player.economy += 1;
+
+            saveGame();
+
+            updateUI();
+
+            closeModal();
+
+        }
+
+    );
+
+}
+
+
+function generateCitizenId() {
+
+    let number =
+        Math.floor(
+            Math.random() * 9998
+        ) + 2;
+
+    return "#" +
+        String(number).padStart(4, "0");
+
+}
+
+
+/* =========================================================
+   LAND
+   ========================================================= */
+
+function buyLand(hectares, priceUSD) {
+
+    if (!player.citizen) {
+
+        alert(
+            "Сначала получите гражданство Vellar."
+        );
+
+        return;
+    }
+
+    showModal(
+
+        "Покупка территории",
+
+        `Вы покупаете ${hectares} га за $${priceUSD}. ` +
+        `Доход составит +${hectares * 2} VEL/час.`,
+
+        function() {
+
+            player.land += hectares;
+
+            player.incomePerHour +=
+                hectares * 2;
+
+            player.economy +=
+                hectares * 0.3;
+
+            saveGame();
+
+            createLandVisual(
+                hectares
+            );
+
+            updateUI();
+
+            closeModal();
+
+        }
+
+    );
+
+}
+
+
+/* =========================================================
+   MAP LAND VISUAL
+   ========================================================= */
+
+function createLandVisual(hectares) {
+
+    const map =
+        document.querySelector(".map");
+
+    const land =
+        document.createElement("div");
+
+    land.className = "land owned";
+
+    const size =
+        Math.max(30, hectares * 22);
+
+    land.style.width =
+        size + "px";
+
+    land.style.height =
+        size + "px";
+
+    land.style.left =
+        (25 + Math.random() * 45) + "%";
+
+    land.style.top =
+        (25 + Math.random() * 45) + "%";
+
+    land.innerHTML =
+        `<div class="land-number">
+            ${hectares} га
+        </div>`;
+
+    map.appendChild(land);
+
+}
+
+
+/* =========================================================
+   WORK
+   ========================================================= */
+
+function work(type) {
+
+    if (!player.citizen) {
+
+        alert(
+            "Работать могут только граждане Vellar."
+        );
+
+        return;
+    }
+
+    if (player.clicksToday >= 100) {
+
+        alert(
+            "Дневной лимит работы выполнен."
+        );
+
+        return;
+    }
+
+    player.clicksToday++;
+
+    if (player.clicksToday === 100) {
+
+        const salary =
+            ECONOMY.buildings[type].salary;
+
+        player.vel += salary;
+
+        player.economy += 0.05;
+
+        alert(
+            `Работа выполнена. Вы получили ${salary} VEL.`
+        );
+
+    }
+
+    saveGame();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   BANK
+   ========================================================= */
+
+function deposit() {
+
+    if (!player.citizen) {
+
+        alert(
+            "Сначала получите гражданство."
+        );
+
+        return;
+    }
+
+    if (player.vel < 100) {
+
+        alert(
+            "Недостаточно VEL."
+        );
+
+        return;
+    }
+
+    player.vel -= 100;
+
+    player.deposit += 100;
+
+    saveGame();
+
+    updateUI();
+
+}
+
+
+function bankInterest() {
+
+    const now =
+        Date.now();
+
+    const seconds =
+        (now - player.lastTick) / 1000;
+
+    if (seconds <= 0) return;
+
+    /*
+       10% годовых.
+       Процент начисляется непрерывно
+       пропорционально времени.
+    */
+
+    const annual =
+        ECONOMY.bank.annualRate;
+
+    const yearlySeconds =
+        365 * 24 * 60 * 60;
+
+    const interest =
+        player.deposit *
+        annual *
+        seconds /
+        yearlySeconds;
+
+    player.deposit += interest;
+
+    player.lastTick = now;
+
+}
+
+
+/* =========================================================
+   PASSIVE VEL
+   ========================================================= */
+
+function passiveIncome() {
+
+    const now =
+        Date.now();
+
+    const seconds =
+        (now - player.lastTick) / 1000;
+
+    if (seconds <= 0) return;
+
+    const hours =
+        seconds / 3600;
+
+    const generated =
+        player.incomePerHour *
+        hours;
+
+    player.vel += generated;
+
+    player.lastTick = now;
+
+}
+
+
+/* =========================================================
+   UI
+   ========================================================= */
+
+function updateUI() {
+
+    passiveIncome();
+
+    bankInterest();
+
+    document.getElementById(
+        "velBalance"
+    ).textContent =
+        formatNumber(player.vel) +
+        " VEL";
+
+    document.getElementById(
+        "velIncome"
+    ).textContent =
+        "+" +
+        formatNumber(player.incomePerHour) +
+        " / час";
+
+    document.getElementById(
+        "landAmount"
+    ).textContent =
+        player.land +
+        " га";
+
+    document.getElementById(
+        "economyValue"
+    ).textContent =
+        player.economy.toFixed(1);
+
+    document.getElementById(
+        "economyText"
+    ).textContent =
+        player.economy.toFixed(1);
+
+    document.getElementById(
+        "economyBar"
+    ).style.width =
+        Math.min(
+            100,
+            player.economy
+        ) + "%";
+
+    document.getElementById(
+        "depositValue"
+    ).textContent =
+        formatNumber(
+            player.deposit
+        ) + " VEL";
+
+    document.getElementById(
+        "clickCount"
+    ).textContent =
+        player.clicksToday +
+        " / 100";
+
+
+    const citizenId =
+        document.getElementById(
+            "citizenId"
+        );
+
+    const status =
+        document.getElementById(
+            "citizenStatus"
+        );
+
+    const card =
+        document.getElementById(
+            "citizenshipCard"
+        );
+
+
+    if (player.citizen) {
+
+        citizenId.textContent =
+            player.citizenId;
+
+        status.textContent =
+            "ГРАЖДАНИН VELLAR";
+
+        card.style.display =
+            "none";
+
+    } else {
+
+        citizenId.textContent =
+            "НЕ ПОЛУЧЕН";
+
+        status.textContent =
+            "НЕ ГРАЖДАНИН";
+
+        card.style.display =
+            "block";
+
+    }
+
+    saveGame();
+
+}
+
+
+/* =========================================================
+   NUMBER FORMAT
+   ========================================================= */
+
+function formatNumber(number) {
+
+    return Number(number).toLocaleString(
+        "ru-RU",
+        {
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function openSection(
+    id,
+    button
+) {
+
+    document
+        .querySelectorAll(".section")
+        .forEach(section => {
+
+            section.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    document
+        .querySelectorAll(".nav button")
+        .forEach(btn => {
+
+            btn.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    document
+        .getElementById(id)
+        .classList.add("active");
+
+    button.classList.add("active");
+
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+function showModal(
+    title,
+    text,
+    callback
+) {
+
+    document
+        .getElementById("modalTitle")
+        .textContent = title;
+
+    document
+        .getElementById("modalText")
+        .textContent = text;
+
+    document
+        .getElementById("modal")
+        .classList.add("show");
+
+    document
+        .getElementById("modalConfirm")
+        .onclick = callback;
+
+}
+
+
+function closeModal() {
+
+    document
+        .getElementById("modal")
+        .classList.remove("show");
+
+}
+
+
+/* =========================================================
+   DAILY RESET
+   ========================================================= */
+
+function checkDailyReset() {
+
+    const key =
+        "vellar_last_day";
+
+    const today =
+        new Date()
+        .toISOString()
+        .slice(0, 10);
+
+    const previous =
+        localStorage.getItem(key);
+
+    if (previous !== today) {
+
+        player.clicksToday = 0;
+
+        localStorage.setItem(
+            key,
+            today
+        );
+
+        saveGame();
+
+    }
+
+}
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+loadGame();
+
+checkDailyReset();
+
+updateUI();
+
+
+/*
+   Обновляем экономику каждую секунду.
+*/
+
+setInterval(
+    updateUI,
+    1000
+);
+
+
+/*
+   Сохраняем состояние каждые 10 секунд.
+*/
+
+setInterval(
+    saveGame,
+    10000
+);
+
+</script>
+
+</body>
+</html>
