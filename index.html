@@ -1,31 +1,737 @@
-V
-VELLAR
-DIGITAL REPUBLIC
-VEL 0
-INCOME / H 0
-ECONOMY 0
-LAND FUNDS $0
-CITIZEN Founder
-#0001
-◈Overview ⌂City Hall ◫Market ₿Bank ⚒Work ✦Events ⌂+Build
-↥Save ↻Reset test
-TERRITORY / 1000 HECTARES
-THE REPUBLIC OF VELLAR
-Own territory. Develop the economy. Build the state.
+<!DOCTYPE html>
+<html lang="en">
 
-−
-100%
-+ BUY LAND
-Free Owned State Building
-CENTER PLOTS
-VELLAR
-CAPITAL DISTRICT
-N
-SELECTED PLOT None
-OWNED 0 / 1000 ha
-LAND INCOME 0 VEL/h
-COMMAND
-Republic Overview
-×
-LIVE Republic systems online.
-×
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>VELLAR — Digital Republic</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     TOP BAR
+========================================================= -->
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-mark">
+            V
+        </div>
+
+        <div>
+
+            <div class="brand-title">
+                VELLAR
+            </div>
+
+            <div class="brand-subtitle">
+                DIGITAL REPUBLIC
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="top-stats">
+
+        <div class="top-stat">
+
+            <span>
+                VEL BALANCE
+            </span>
+
+            <strong id="velBalance">
+                2,500
+            </strong>
+
+        </div>
+
+
+        <div class="top-stat">
+
+            <span>
+                INCOME / HOUR
+            </span>
+
+            <strong id="velIncome">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="top-stat">
+
+            <span>
+                ECONOMY
+            </span>
+
+            <strong id="economyValue">
+                62%
+            </strong>
+
+        </div>
+
+
+        <div class="top-stat">
+
+            <span>
+                TEST CASH
+            </span>
+
+            <strong>
+                $<span id="cashValue">100</span>
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <div class="citizen-box">
+
+        <div class="citizen-avatar">
+            F
+        </div>
+
+        <div>
+
+            <span>
+                CITIZEN
+            </span>
+
+            <strong id="citizenName">
+                Founder
+            </strong>
+
+            <small id="citizenId">
+                #0001
+            </small>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================================================
+     MAIN NAVIGATION
+========================================================= -->
+
+<nav class="main-nav">
+
+    <button
+        class="nav-btn active"
+        data-panel="overview"
+    >
+        OVERVIEW
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="city"
+    >
+        CITY HALL
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="market"
+    >
+        MARKET
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="bank"
+    >
+        BANK
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="work"
+    >
+        WORK
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="events"
+    >
+        EVENTS
+    </button>
+
+
+    <button
+        class="nav-btn"
+        data-panel="build"
+    >
+        BUILD
+    </button>
+
+
+    <div class="nav-spacer"></div>
+
+
+    <button
+        class="nav-btn"
+        id="buyLandTop"
+    >
+        + ACQUIRE LAND
+    </button>
+
+
+    <button
+        class="nav-btn"
+        id="saveBtn"
+    >
+        SAVE
+    </button>
+
+
+    <button
+        class="nav-btn danger"
+        id="resetBtn"
+    >
+        RESET
+    </button>
+
+</nav>
+
+
+
+<!-- =========================================================
+     RESOURCE BAR
+========================================================= -->
+
+<section class="resource-bar">
+
+    <div class="resource-title">
+
+        <span>
+            RESOURCE MARKET
+        </span>
+
+        <small>
+            VELLAR ECONOMY
+        </small>
+
+    </div>
+
+
+    <div
+        class="resource-row"
+        id="resourceRow"
+    >
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     GAME LAYOUT
+========================================================= -->
+
+<main class="game-layout">
+
+
+    <!-- =====================================================
+         MAP
+    ====================================================== -->
+
+    <section class="map-section">
+
+
+        <div class="map-header">
+
+
+            <div>
+
+                <div class="section-kicker">
+                    REPUBLIC TERRITORY
+                </div>
+
+                <h1>
+                    VELLAR
+                </h1>
+
+                <p>
+                    1,000 hectares · Central Administration Territory
+                </p>
+
+            </div>
+
+
+            <div class="map-stats">
+
+
+                <div class="map-stat">
+
+                    <span>
+                        OWNED
+                    </span>
+
+                    <strong id="ownedCount">
+                        0
+                    </strong>
+
+                    <small>
+                        HA
+                    </small>
+
+                </div>
+
+
+                <div class="map-stat">
+
+                    <span>
+                        LAND INCOME
+                    </span>
+
+                    <strong id="landIncome">
+                        0
+                    </strong>
+
+                    <small>
+                        VEL/H
+                    </small>
+
+                </div>
+
+
+                <div class="map-stat">
+
+                    <span>
+                        SELECTED
+                    </span>
+
+                    <strong id="selectedPlot">
+                        None
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- MAP CONTROLS -->
+
+        <div class="map-controls">
+
+
+            <button
+                id="zoomOut"
+                class="map-control"
+            >
+                −
+            </button>
+
+
+            <div
+                class="zoom-readout"
+                id="zoomReadout"
+            >
+                100%
+            </div>
+
+
+            <button
+                id="zoomIn"
+                class="map-control"
+            >
+                +
+            </button>
+
+
+            <button
+                id="centerMap"
+                class="map-control wide"
+            >
+                CENTER
+            </button>
+
+
+            <button
+                id="togglePlots"
+                class="map-control wide"
+            >
+                PLOTS
+            </button>
+
+
+        </div>
+
+
+
+        <!-- MAP VIEWPORT -->
+
+        <div
+            class="map-viewport"
+            id="mapViewport"
+        >
+
+
+            <div
+                class="map-world"
+                id="mapWorld"
+            >
+
+
+                <!-- TERRITORY BACKGROUND -->
+
+                <div class="territory-background">
+
+
+                    <div class="territory-city">
+
+                        <div class="city-core">
+
+                            <div class="city-hall-marker">
+                                V
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="mountain mountain-1"></div>
+
+                    <div class="mountain mountain-2"></div>
+
+                    <div class="mountain mountain-3"></div>
+
+
+                    <div class="forest forest-1"></div>
+
+                    <div class="forest forest-2"></div>
+
+                    <div class="forest forest-3"></div>
+
+
+                    <div class="river river-main"></div>
+
+                    <div class="river river-side"></div>
+
+
+                    <div class="road road-main"></div>
+
+                    <div class="road road-cross"></div>
+
+
+                    <div class="district district-north">
+                        NORTH
+                    </div>
+
+                    <div class="district district-south">
+                        SOUTH
+                    </div>
+
+                    <div class="district district-east">
+                        EAST
+                    </div>
+
+                    <div class="district district-west">
+                        WEST
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- 1000 INTERACTIVE PLOTS -->
+
+                <div
+                    class="plot-layer"
+                    id="plotLayer"
+                >
+                </div>
+
+
+
+                <!-- BUILDINGS -->
+
+                <div
+                    class="building-layer"
+                    id="buildingLayer"
+                >
+                </div>
+
+
+
+                <!-- MAP LABELS -->
+
+                <div class="map-label label-capital">
+
+                    CAPITAL
+
+                </div>
+
+
+                <div class="map-label label-farms">
+
+                    AGRICULTURAL ZONE
+
+                </div>
+
+
+                <div class="map-label label-industry">
+
+                    INDUSTRIAL ZONE
+
+                </div>
+
+
+                <div class="map-label label-mine">
+
+                    RESOURCE ZONE
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- MAP LEGEND -->
+
+        <div class="map-legend">
+
+
+            <div>
+
+                <i class="legend-free"></i>
+
+                <span>
+                    FREE LAND
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <i class="legend-owned"></i>
+
+                <span>
+                    YOUR LAND
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <i class="legend-state"></i>
+
+                <span>
+                    STATE
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <i class="legend-building"></i>
+
+                <span>
+                    BUILDING
+                </span>
+
+            </div>
+
+
+            <div class="legend-help">
+
+                Click any plot to inspect it.
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         RIGHT PANEL
+    ====================================================== -->
+
+    <aside class="side-panel">
+
+
+        <div class="panel-header">
+
+
+            <div>
+
+                <span class="panel-kicker">
+                    VELLAR ADMINISTRATION
+                </span>
+
+                <h2 id="panelTitle">
+                    Republic Overview
+                </h2>
+
+            </div>
+
+
+            <button
+                id="closePanel"
+                class="panel-close"
+            >
+                ×
+            </button>
+
+
+        </div>
+
+
+
+        <div
+            class="panel-content"
+            id="panelContent"
+        >
+
+        </div>
+
+
+    </aside>
+
+
+</main>
+
+
+
+<!-- =========================================================
+     BOTTOM TICKER
+========================================================= -->
+
+<footer class="ticker">
+
+
+    <div class="ticker-status">
+
+        <span class="status-dot"></span>
+
+        SYSTEM ONLINE
+
+    </div>
+
+
+    <div
+        class="ticker-text"
+        id="tickerText"
+    >
+
+        Republic systems online.
+
+    </div>
+
+
+    <div class="ticker-right">
+
+        VELLAR LOCAL BUILD
+
+    </div>
+
+
+</footer>
+
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+    class="modal-backdrop"
+    id="modalBackdrop"
+>
+
+
+    <div class="modal">
+
+
+        <button
+            class="modal-close"
+            id="modalClose"
+        >
+            ×
+        </button>
+
+
+        <div
+            id="modalContent"
+        >
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    class="toast"
+    id="toast"
+>
+    System ready.
+</div>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script src="app.js"></script>
+
+
+</body>
+
+</html>
