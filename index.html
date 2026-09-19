@@ -2,7 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    >
 
     <title>VELLAR — Digital Republic</title>
 
@@ -13,8 +17,7 @@
 
 <div id="app">
 
-    <!-- ================= TOP ================= -->
-
+    <!-- TOP BAR -->
     <header class="topbar">
 
         <div class="brand">
@@ -34,17 +37,17 @@
             </div>
 
             <div class="stat">
-                <span class="stat-label">Доход</span>
+                <span class="stat-label">INCOME</span>
                 <strong id="velIncome">0/h</strong>
             </div>
 
             <div class="stat">
-                <span class="stat-label">Экономика</span>
-                <strong id="economyValue">50</strong>
+                <span class="stat-label">ECONOMY</span>
+                <strong id="economyValue">0</strong>
             </div>
 
-            <div class="stat citizen-stat">
-                <span class="stat-label">CITIZEN</span>
+            <div class="citizen-box">
+                <span>CITIZEN</span>
                 <strong id="citizenId">#0001</strong>
             </div>
 
@@ -53,236 +56,379 @@
     </header>
 
 
-    <!-- ================= NAVIGATION ================= -->
-
+    <!-- NAVIGATION -->
     <nav class="navigation">
 
-        <button class="nav-button active" data-panel="overview">
-            <span>⌂</span>
-            Обзор
+        <button class="nav-button active" data-panel="map">
+            🗺 MAP
         </button>
 
         <button class="nav-button" data-panel="city">
-            <span>🏛</span>
-            Государство
+            🏛 CITY HALL
         </button>
 
         <button class="nav-button" data-panel="market">
-            <span>◈</span>
-            Рынок
+            📦 MARKET
         </button>
 
         <button class="nav-button" data-panel="bank">
-            <span>₿</span>
-            Банк
+            🏦 BANK
         </button>
 
         <button class="nav-button" data-panel="work">
-            <span>⚒</span>
-            Работа
-        </button>
-
-        <button class="nav-button" data-panel="build">
-            <span>⌂</span>
-            Строительство
+            ⚒ WORK
         </button>
 
         <button class="nav-button" data-panel="events">
-            <span>!</span>
-            События
+            ⚡ EVENTS
         </button>
 
     </nav>
 
 
-    <!-- ================= RESOURCE BAR ================= -->
+    <!-- MAIN -->
+    <main class="main">
 
-    <section class="resource-bar">
+        <!-- LEFT -->
+        <section class="world">
 
-        <div class="resource">
-            <span>Население</span>
-            <strong id="populationValue">1</strong>
-        </div>
-
-        <div class="resource">
-            <span>Территория</span>
-            <strong id="landValue">0 / 1000 га</strong>
-        </div>
-
-        <div class="resource">
-            <span>Казна</span>
-            <strong id="treasuryValue">10 000 VEL</strong>
-        </div>
-
-        <div class="resource">
-            <span>Налог</span>
-            <strong id="taxValue">10%</strong>
-        </div>
-
-        <div class="resource">
-            <span>Развитие</span>
-            <strong id="developmentValue">1</strong>
-        </div>
-
-    </section>
-
-
-    <!-- ================= MAIN ================= -->
-
-    <main class="main-layout">
-
-        <!-- MAP -->
-
-        <section class="map-section">
-
-            <div class="section-header">
+            <div class="world-header">
 
                 <div>
-                    <div class="eyebrow">TERRITORY</div>
-                    <h1>Территория Vellar</h1>
+                    <h1>VELLAR TERRITORY</h1>
+                    <p>1000 HECTARES • DIGITAL STATE</p>
                 </div>
 
-                <div class="map-controls">
+                <div class="world-controls">
 
-                    <button id="zoomOut" class="small-button">−</button>
+                    <button id="zoomOut">−</button>
 
                     <span id="zoomValue">100%</span>
 
-                    <button id="zoomIn" class="small-button">+</button>
+                    <button id="zoomIn">+</button>
 
                 </div>
 
             </div>
 
 
+            <!-- MAP -->
             <div class="map-wrapper">
 
-                <div id="map">
+                <div
+                    id="map"
+                    class="map"
+                >
 
-                    <div class="map-background">
+                    <!-- background image -->
+                    <img
+                        id="mapBackground"
+                        class="map-background"
+                        src="assets/map.png"
+                        alt="Vellar Map"
+                    >
 
-                        <div class="mountain mountain-1"></div>
-                        <div class="mountain mountain-2"></div>
-                        <div class="mountain mountain-3"></div>
-
-                        <div class="river"></div>
-
-                        <div class="city-center">
-                            <div class="city-hall-visual">
-
-                                <div class="hall-roof"></div>
-
-                                <div class="hall-body">
-                                    <div class="hall-column"></div>
-                                    <div class="hall-column"></div>
-                                    <div class="hall-column"></div>
-                                    <div class="hall-column"></div>
-                                </div>
-
-                            </div>
-
-                            <div class="city-label">
-                                VELLAR CITY
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- 1000 plots generated by JS -->
-
-                    <div id="plotLayer"></div>
+                    <!-- grid -->
+                    <div
+                        id="plotGrid"
+                        class="plot-grid"
+                    ></div>
 
                     <!-- buildings -->
-
-                    <div id="buildingLayer"></div>
+                    <div
+                        id="buildingLayer"
+                        class="building-layer"
+                    ></div>
 
                 </div>
 
             </div>
 
 
-            <!-- MAP LEGEND -->
+            <div class="map-help">
 
-            <div class="map-legend">
+                <span>
+                    🖱 Нажмите на участок
+                </span>
 
-                <div>
-                    <span class="legend-dot free"></span>
-                    Свободно
-                </div>
+                <span>
+                    🟩 ВАША ЗЕМЛЯ
+                </span>
 
-                <div>
-                    <span class="legend-dot owned"></span>
-                    Ваша земля
-                </div>
-
-                <div>
-                    <span class="legend-dot state"></span>
-                    Государство
-                </div>
-
-                <div>
-                    <span class="legend-dot building"></span>
-                    Предприятие
-                </div>
+                <span>
+                    ⬜ СВОБОДНАЯ
+                </span>
 
             </div>
 
         </section>
 
 
-        <!-- ================= RIGHT PANEL ================= -->
-
+        <!-- RIGHT PANEL -->
         <aside class="side-panel">
 
-            <!-- SELECTED LAND -->
+            <!-- MAP PANEL -->
+            <div
+                class="panel-content active"
+                data-content="map"
+            >
 
-            <div id="selectedPanel" class="panel-card">
+                <div class="panel-title">
+                    LAND
+                </div>
 
-                <div class="eyebrow">LAND</div>
-
-                <h2 id="selectedTitle">
-                    Выберите участок
-                </h2>
-
-                <p id="selectedDescription">
-                    Нажмите на участок территории, чтобы посмотреть информацию.
-                </p>
-
-                <div id="selectedInfo" class="selected-info"></div>
-
-                <div id="landActions" class="land-actions"></div>
+                <div id="selectedLand">
+                    <div class="empty-state">
+                        Выберите участок<br>
+                        на карте
+                    </div>
+                </div>
 
             </div>
 
 
-            <!-- OVERVIEW -->
+            <!-- CITY -->
+            <div
+                class="panel-content"
+                data-content="city"
+            >
 
-            <div id="overviewPanel" class="panel-card">
+                <div class="panel-title">
+                    CITY HALL
+                </div>
 
-                <div class="eyebrow">VELLAR STATUS</div>
+                <div class="big-number">
+                    <span id="population">1</span>
+                </div>
 
-                <h2>Республика Vellar</h2>
+                <div class="metric">
+                    <span>POPULATION</span>
+                    <strong id="populationText">1</strong>
+                </div>
 
-                <div class="status-grid">
+                <div class="metric">
+                    <span>DEVELOPMENT</span>
+                    <strong id="developmentText">1</strong>
+                </div>
+
+                <div class="metric">
+                    <span>TREASURY</span>
+                    <strong id="treasuryText">0 VEL</strong>
+                </div>
+
+                <button
+                    id="upgradeCity"
+                    class="main-button"
+                >
+                    UPGRADE CITY HALL
+                </button>
+
+            </div>
+
+
+            <!-- MARKET -->
+            <div
+                class="panel-content"
+                data-content="market"
+            >
+
+                <div class="panel-title">
+                    MARKET
+                </div>
+
+                <div class="resource-card">
 
                     <div>
-                        <span>Участков</span>
-                        <strong id="overviewLand">0</strong>
+                        <strong>🌾 FOOD</strong>
+                        <small id="foodAmount">0</small>
                     </div>
 
-                    <div>
-                        <span>VEL / час</span>
-                        <strong id="overviewIncome">0</strong>
-                    </div>
+                    <button
+                        class="small-button"
+                        data-sell="food"
+                    >
+                        SELL
+                    </button>
+
+                </div>
+
+
+                <div class="resource-card">
 
                     <div>
-                        <span>Экономика</span>
-                        <strong id="overviewEconomy">50</strong>
+                        <strong>⛏ ORE</strong>
+                        <small id="oreAmount">0</small>
                     </div>
 
+                    <button
+                        class="small-button"
+                        data-sell="ore"
+                    >
+                        SELL
+                    </button>
+
+                </div>
+
+
+                <div class="resource-card">
+
                     <div>
-                        <span>Развитие</span>
-                        <strong id="overviewDevelopment">1</strong>
+                        <strong>🏭 GOODS</strong>
+                        <small id="goodsAmount">0</small>
+                    </div>
+
+                    <button
+                        class="small-button"
+                        data-sell="goods"
+                    >
+                        SELL
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- BANK -->
+            <div
+                class="panel-content"
+                data-content="bank"
+            >
+
+                <div class="panel-title">
+                    VELLAR BANK
+                </div>
+
+                <div class="bank-balance">
+                    <span>DEPOSIT</span>
+                    <strong id="bankBalance">0 VEL</strong>
+                </div>
+
+                <div class="bank-apr">
+                    APY <strong id="bankApr">10%</strong>
+                </div>
+
+                <input
+                    id="bankAmount"
+                    class="input"
+                    type="number"
+                    min="1"
+                    placeholder="Amount VEL"
+                >
+
+                <div class="two-buttons">
+
+                    <button
+                        id="depositButton"
+                        class="main-button"
+                    >
+                        DEPOSIT
+                    </button>
+
+                    <button
+                        id="withdrawButton"
+                        class="secondary-button"
+                    >
+                        WITHDRAW
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- WORK -->
+            <div
+                class="panel-content"
+                data-content="work"
+            >
+
+                <div class="panel-title">
+                    WORK
+                </div>
+
+                <div id="workInfo">
+
+                    <div class="job-card">
+
+                        <strong>🌾 FARM</strong>
+
+                        <span>
+                            100 clicks
+                        </span>
+
+                        <b>
+                            +25 VEL
+                        </b>
+
+                        <button
+                            class="work-button"
+                            data-job="farm"
+                        >
+                            WORK
+                        </button>
+
+                    </div>
+
+
+                    <div class="job-card">
+
+                        <strong>🏭 FACTORY</strong>
+
+                        <span>
+                            100 clicks
+                        </span>
+
+                        <b>
+                            +40 VEL
+                        </b>
+
+                        <button
+                            class="work-button"
+                            data-job="factory"
+                        >
+                            WORK
+                        </button>
+
+                    </div>
+
+
+                    <div class="job-card">
+
+                        <strong>⛏ MINE</strong>
+
+                        <span>
+                            100 clicks
+                        </span>
+
+                        <b>
+                            +30 VEL
+                        </b>
+
+                        <button
+                            class="work-button"
+                            data-job="mine"
+                        >
+                            WORK
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="work-progress">
+
+                    <div>
+                        TODAY:
+                        <strong id="workClicks">0</strong>
+                        / 100
+                    </div>
+
+                    <div class="progress">
+                        <div
+                            id="workProgress"
+                            class="progress-bar"
+                        ></div>
                     </div>
 
                 </div>
@@ -290,16 +436,17 @@
             </div>
 
 
-            <!-- ACTIVITY -->
+            <!-- EVENTS -->
+            <div
+                class="panel-content"
+                data-content="events"
+            >
 
-            <div class="panel-card">
-
-                <div class="panel-heading">
-                    <span>Последние события</span>
-                    <span class="live-dot"></span>
+                <div class="panel-title">
+                    EVENTS
                 </div>
 
-                <div id="activityLog" class="activity-log"></div>
+                <div id="eventList"></div>
 
             </div>
 
@@ -308,41 +455,125 @@
     </main>
 
 
-    <!-- ================= MODAL ================= -->
+    <!-- LAND MODAL -->
+    <div
+        id="landModal"
+        class="modal hidden"
+    >
 
-    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-window">
 
-        <div class="modal">
-
-            <button id="closeModal" class="modal-close">
+            <button
+                id="closeLandModal"
+                class="modal-close"
+            >
                 ×
             </button>
 
-            <div id="modalContent"></div>
+            <div class="modal-title">
+                LAND PLOT
+            </div>
+
+            <div
+                id="landModalContent"
+            ></div>
 
         </div>
 
     </div>
 
 
-    <!-- ================= TOAST ================= -->
+    <!-- BUILD MODAL -->
+    <div
+        id="buildModal"
+        class="modal hidden"
+    >
 
-    <div id="toastContainer"></div>
+        <div class="modal-window">
+
+            <button
+                id="closeBuildModal"
+                class="modal-close"
+            >
+                ×
+            </button>
+
+            <div class="modal-title">
+                CONSTRUCT
+            </div>
+
+            <div class="build-options">
+
+                <button
+                    class="build-option"
+                    data-build="farm"
+                >
+                    <img
+                        src="assets/farm.png"
+                        alt=""
+                    >
+
+                    <div>
+                        <strong>FARM</strong>
+                        <span>1000 VEL</span>
+                    </div>
+                </button>
 
 
-    <!-- ================= FOOTER ================= -->
+                <button
+                    class="build-option"
+                    data-build="factory"
+                >
+                    <img
+                        src="assets/factory.png"
+                        alt=""
+                    >
+
+                    <div>
+                        <strong>FACTORY</strong>
+                        <span>2500 VEL</span>
+                    </div>
+                </button>
+
+
+                <button
+                    class="build-option"
+                    data-build="mine"
+                >
+                    <img
+                        src="assets/mine.png"
+                        alt=""
+                    >
+
+                    <div>
+                        <strong>MINE</strong>
+                        <span>5000 VEL</span>
+                    </div>
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TOAST -->
+    <div
+        id="toast"
+        class="toast"
+    >
+        <span id="toastText"></span>
+    </div>
+
 
     <footer>
 
         <span>VELLAR DIGITAL REPUBLIC</span>
 
         <span>
-            VEL ECONOMY SYSTEM
+            VEL • LAND • WORK • ECONOMY
         </span>
-
-        <button id="resetGame" class="danger-button">
-            Сбросить тест
-        </button>
 
     </footer>
 
