@@ -1,13 +1,17 @@
-/* =========================================================
-   VELLAR DIGITAL REPUBLIC
-   Local Prototype
-   Version 1.0
-========================================================= */
+"use strict";
+
+/*
+=========================================================
+VELLAR
+DIGITAL REPUBLIC
+LOCAL GAME PROTOTYPE
+
+Версия: 1.0
+=========================================================
+*/
+
 
 document.addEventListener("DOMContentLoaded", () => {
-
-    "use strict";
-
 
     /* =====================================================
        CONFIG
@@ -15,491 +19,240 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const CONFIG = {
 
-        COLS: 40,
-        ROWS: 25,
+        cols: 40,
+        rows: 25,
 
-        TOTAL_PLOTS: 1000,
+        totalPlots: 1000,
 
-        LAND_PRICES: {
+        landPrices: {
             1: 10,
             2: 20,
             4: 40
         },
 
-        LAND_INCOME: 2,
+        landIncomePerHa: 2,
 
-        START_VEL: 2500,
+        jobs: {
+            farm: {
+                salary: 25,
+                clicks: 100
+            },
 
-        START_TREASURY: 10000,
+            factory: {
+                salary: 40,
+                clicks: 100
+            },
 
-        ECONOMY: 50,
+            mine: {
+                salary: 30,
+                clicks: 100
+            }
+        },
 
-        DEVELOPMENT: 1,
+        buildings: {
+            farm: {
+                price: 1000,
+                image: "assets/farm.png"
+            },
 
-        TAX: 10,
+            factory: {
+                price: 2500,
+                image: "assets/factory.png"
+            },
 
-        BANK_APY: 10,
+            mine: {
+                price: 5000,
+                image: "assets/mine.png"
+            }
+        },
 
-        STORAGE_KEY: "vellar_complete_v1"
+        bankAPY: 10,
+
+        storageKey: "vellar_game_v1"
 
     };
 
 
     /* =====================================================
-       HELPERS
+       STATE
+    ===================================================== */
+
+    let state = loadState();
+
+    let zoom = 1;
+
+    let selectedPlot = null;
+
+
+    /* =====================================================
+       DOM
     ===================================================== */
 
     const $ = id => document.getElementById(id);
 
-    const format = number => {
+    const plotGrid = $("plotGrid");
 
-        return Math.floor(number)
-            .toLocaleString("ru-RU");
+    const buildingLayer = $("buildingLayer");
 
-    };
+    const map = $("map");
 
-    const now = () => {
+    const landModal = $("landModal");
 
-        return new Date()
-            .toLocaleTimeString(
-                "ru-RU",
+    const buildModal = $("buildModal");
+
+    const toast = $("toast");
+
+    const toastText = $("toastText");
+
+
+    /* =====================================================
+       INITIALIZATION
+    ===================================================== */
+
+    createPlots();
+
+    renderBuildings();
+
+    updateUI();
+
+    setupEvents();
+
+    startGameLoop();
+
+
+    /* =====================================================
+       DEFAULT STATE
+    ===================================================== */
+
+    function createDefaultState() {
+
+        return {
+
+            citizen: {
+
+                id: "#0001",
+
+                name: "Founder"
+
+            },
+
+
+            vel: 2500,
+
+            cash: 100,
+
+
+            ownedPlots: [],
+
+
+            buildings: [],
+
+
+            resources: {
+
+                food: 0,
+
+                ore: 0,
+
+                goods: 0
+
+            },
+
+
+            bank: {
+
+                balance: 0,
+
+                lastInterest: Date.now()
+
+            },
+
+
+            population: 1,
+
+            development: 1,
+
+            economy: 62,
+
+            treasury: 0,
+
+
+            work: {
+
+                clicks: 0,
+
+                job: null,
+
+                lastReset: getDayKey()
+
+            },
+
+
+            events: [
+
                 {
-                    hour: "2-digit",
-                    minute: "2-digit"
+
+                    text: "Республика Vellar создана.",
+
+                    time: Date.now()
+
                 }
-            );
 
-    };
+            ],
 
 
-    /* =====================================================
-       GAME STATE
-    ===================================================== */
+            lastIncome: Date.now()
 
-    let state = {
-
-        citizen: {
-
-            id: "#0001",
-
-            name: "Founder",
-
-            country: "Vellar",
-
-            joined: new Date().toISOString()
-
-        },
-
-        vel: CONFIG.START_VEL,
-
-        treasury: CONFIG.START_TREASURY,
-
-        economy: CONFIG.ECONOMY,
-
-        development: CONFIG.DEVELOPMENT,
-
-        population: 1,
-
-        tax: CONFIG.TAX,
-
-        selectedPlot: null,
-
-        ownedPlots: [],
-
-        landIncome: 0,
-
-        zoom: 100,
-
-        bank: {
-
-            balance: 0,
-
-            interest: 0,
-
-            lastUpdate: Date.now()
-
-        },
-
-        resources: {
-
-            food: 0,
-
-            metal: 0,
-
-            goods: 0
-
-        },
-
-        playerBuildings: [],
-
-        events: [],
-
-        jobs: {
-
-            farm: 0,
-
-            factory: 0,
-
-            mine: 0
-
-        },
-
-        dailyWork: {
-
-            farm: 0,
-
-            factory: 0,
-
-            mine: 0
-
-        },
-
-        lastWorkDay:
-            new Date().toDateString()
-
-    };
-
-
-    /* =====================================================
-       STATE BUILDINGS
-    ===================================================== */
-
-    const stateBuildings = [
-
-        {
-            id: "cityhall",
-            type: "cityhall",
-            name: "City Hall",
-            emoji: "🏛",
-            x: 410,
-            y: 255
-        },
-
-        /* MINES */
-
-        {
-            id: "mine1",
-            type: "mine",
-            name: "Mine #1",
-            emoji: "⛏",
-            x: 70,
-            y: 75
-        },
-
-        {
-            id: "mine2",
-            type: "mine",
-            name: "Mine #2",
-            emoji: "⛏",
-            x: 160,
-            y: 430
-        },
-
-        {
-            id: "mine3",
-            type: "mine",
-            name: "Mine #3",
-            emoji: "⛏",
-            x: 700,
-            y: 70
-        },
-
-        {
-            id: "mine4",
-            type: "mine",
-            name: "Mine #4",
-            emoji: "⛏",
-            x: 730,
-            y: 460
-        },
-
-        /* FACTORIES */
-
-        {
-            id: "factory1",
-            type: "factory",
-            name: "Factory #1",
-            emoji: "🏭",
-            x: 270,
-            y: 80
-        },
-
-        {
-            id: "factory2",
-            type: "factory",
-            name: "Factory #2",
-            emoji: "🏭",
-            x: 330,
-            y: 80
-        },
-
-        {
-            id: "factory3",
-            type: "factory",
-            name: "Factory #3",
-            emoji: "🏭",
-            x: 580,
-            y: 80
-        },
-
-        {
-            id: "factory4",
-            type: "factory",
-            name: "Factory #4",
-            emoji: "🏭",
-            x: 640,
-            y: 80
-        },
-
-        {
-            id: "factory5",
-            type: "factory",
-            name: "Factory #5",
-            emoji: "🏭",
-            x: 80,
-            y: 230
-        },
-
-        {
-            id: "factory6",
-            type: "factory",
-            name: "Factory #6",
-            emoji: "🏭",
-            x: 140,
-            y: 230
-        },
-
-        {
-            id: "factory7",
-            type: "factory",
-            name: "Factory #7",
-            emoji: "🏭",
-            x: 690,
-            y: 230
-        },
-
-        {
-            id: "factory8",
-            type: "factory",
-            name: "Factory #8",
-            emoji: "🏭",
-            x: 750,
-            y: 230
-        },
-
-        {
-            id: "factory9",
-            type: "factory",
-            name: "Factory #9",
-            emoji: "🏭",
-            x: 260,
-            y: 470
-        },
-
-        {
-            id: "factory10",
-            type: "factory",
-            name: "Factory #10",
-            emoji: "🏭",
-            x: 600,
-            y: 470
-        },
-
-        /* FARMS */
-
-        {
-            id: "farm1",
-            type: "farm",
-            name: "Farm #1",
-            emoji: "🌾",
-            x: 30,
-            y: 145
-        },
-
-        {
-            id: "farm2",
-            type: "farm",
-            name: "Farm #2",
-            emoji: "🌾",
-            x: 90,
-            y: 145
-        },
-
-        {
-            id: "farm3",
-            type: "farm",
-            name: "Farm #3",
-            emoji: "🌾",
-            x: 150,
-            y: 145
-        },
-
-        {
-            id: "farm4",
-            type: "farm",
-            name: "Farm #4",
-            emoji: "🌾",
-            x: 730,
-            y: 145
-        },
-
-        {
-            id: "farm5",
-            type: "farm",
-            name: "Farm #5",
-            emoji: "🌾",
-            x: 790,
-            y: 145
-        },
-
-        {
-            id: "farm6",
-            type: "farm",
-            name: "Farm #6",
-            emoji: "🌾",
-            x: 30,
-            y: 370
-        },
-
-        {
-            id: "farm7",
-            type: "farm",
-            name: "Farm #7",
-            emoji: "🌾",
-            x: 90,
-            y: 370
-        },
-
-        {
-            id: "farm8",
-            type: "farm",
-            name: "Farm #8",
-            emoji: "🌾",
-            x: 150,
-            y: 370
-        },
-
-        {
-            id: "farm9",
-            type: "farm",
-            name: "Farm #9",
-            emoji: "🌾",
-            x: 730,
-            y: 370
-        },
-
-        {
-            id: "farm10",
-            type: "farm",
-            name: "Farm #10",
-            emoji: "🌾",
-            x: 790,
-            y: 370
-        },
-
-        {
-            id: "farm11",
-            type: "farm",
-            name: "Farm #11",
-            emoji: "🌾",
-            x: 300,
-            y: 530
-        },
-
-        {
-            id: "farm12",
-            type: "farm",
-            name: "Farm #12",
-            emoji: "🌾",
-            x: 370,
-            y: 530
-        },
-
-        {
-            id: "farm13",
-            type: "farm",
-            name: "Farm #13",
-            emoji: "🌾",
-            x: 510,
-            y: 530
-        },
-
-        {
-            id: "farm14",
-            type: "farm",
-            name: "Farm #14",
-            emoji: "🌾",
-            x: 580,
-            y: 530
-        },
-
-        {
-            id: "farm15",
-            type: "farm",
-            name: "Farm #15",
-            emoji: "🌾",
-            x: 650,
-            y: 530
-        }
-
-    ];
-
-
-    /* =====================================================
-       STORAGE
-    ===================================================== */
-
-    function save() {
-
-        localStorage.setItem(
-            CONFIG.STORAGE_KEY,
-            JSON.stringify(state)
-        );
+        };
 
     }
 
 
-    function load() {
+    /* =====================================================
+       LOAD / SAVE
+    ===================================================== */
 
-        const saved =
-            localStorage.getItem(
-                CONFIG.STORAGE_KEY
-            );
-
-        if (!saved) return;
+    function loadState() {
 
         try {
 
-            const parsed =
-                JSON.parse(saved);
+            const saved =
+                localStorage.getItem(
+                    CONFIG.storageKey
+                );
 
-            state = {
-                ...state,
+            if (!saved) {
+
+                return createDefaultState();
+
+            }
+
+            const parsed = JSON.parse(saved);
+
+            return {
+
+                ...createDefaultState(),
+
                 ...parsed,
 
                 citizen: {
-                    ...state.citizen,
+                    ...createDefaultState().citizen,
                     ...(parsed.citizen || {})
                 },
 
-                bank: {
-                    ...state.bank,
-                    ...(parsed.bank || {})
-                },
-
                 resources: {
-                    ...state.resources,
+                    ...createDefaultState().resources,
                     ...(parsed.resources || {})
                 },
 
-                jobs: {
-                    ...state.jobs,
-                    ...(parsed.jobs || {})
+                bank: {
+                    ...createDefaultState().bank,
+                    ...(parsed.bank || {})
                 },
 
-                dailyWork: {
-                    ...state.dailyWork,
-                    ...(parsed.dailyWork || {})
+                work: {
+                    ...createDefaultState().work,
+                    ...(parsed.work || {})
                 }
 
             };
@@ -507,52 +260,63 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error(
-                "Ошибка загрузки:",
+                "Vellar save error:",
                 error
             );
+
+            return createDefaultState();
 
         }
 
     }
 
 
+    function saveState() {
+
+        localStorage.setItem(
+
+            CONFIG.storageKey,
+
+            JSON.stringify(state)
+
+        );
+
+    }
+
+
     /* =====================================================
-       PLOTS
+       CREATE 1000 PLOTS
     ===================================================== */
 
     function createPlots() {
 
-        const layer = $("plotLayer");
-
-        layer.innerHTML = "";
+        plotGrid.innerHTML = "";
 
         for (
             let i = 0;
-            i < CONFIG.TOTAL_PLOTS;
+            i < CONFIG.totalPlots;
             i++
         ) {
 
             const plot =
-                document.createElement("button");
+                document.createElement("div");
 
             plot.className = "plot";
 
-            plot.type = "button";
-
             plot.dataset.plotId = i;
 
-            plot.title =
-                `Участок #${String(i + 1).padStart(4,"0")}`;
+            const owned =
+                state.ownedPlots.find(
+                    p => p.id === i
+                );
 
-            if (
-                state.ownedPlots.includes(i)
-            ) {
+            if (owned) {
 
                 plot.classList.add("owned");
 
             }
 
-            layer.appendChild(plot);
+            plotGrid.appendChild(plot);
 
         }
 
@@ -565,225 +329,588 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderBuildings() {
 
-        const layer =
-            $("buildingLayer");
+        buildingLayer.innerHTML = "";
 
-        layer.innerHTML = "";
+        /*
+        Центрируем государственные здания.
+        */
 
+        const centerBuilding =
+            document.createElement("img");
 
-        stateBuildings.forEach(
-            building => {
+        centerBuilding.className =
+            "building";
 
-                const element =
-                    document.createElement("div");
+        centerBuilding.src =
+            "assets/city-hall.png";
 
-                element.className =
-                    `building ${building.type}`;
+        centerBuilding.style.left =
+            "50%";
 
-                element.style.left =
-                    `${building.x}px`;
+        centerBuilding.style.top =
+            "50%";
 
-                element.style.top =
-                    `${building.y}px`;
+        centerBuilding.title =
+            "Vellar City Hall";
 
-                element.textContent =
-                    building.emoji;
-
-                element.title =
-                    building.name;
-
-                layer.appendChild(element);
-
-            }
+        buildingLayer.appendChild(
+            centerBuilding
         );
 
 
-        state.playerBuildings
-            .forEach(
-                building => {
+        /*
+        Игровые здания
+        */
 
-                    const element =
-                        document.createElement("div");
+        state.buildings.forEach(
+            building => {
 
-                    element.className =
-                        "building player";
+                const img =
+                    document.createElement("img");
 
-                    element.style.left =
-                        `${building.x}px`;
+                img.className =
+                    "building";
 
-                    element.style.top =
-                        `${building.y}px`;
+                img.src =
+                    CONFIG.buildings[
+                        building.type
+                    ].image;
 
-                    element.textContent =
-                        building.emoji;
+                img.style.left =
+                    building.x + "%";
 
-                    element.title =
-                        building.name;
+                img.style.top =
+                    building.y + "%";
 
-                    layer.appendChild(element);
+                img.title =
+                    building.type.toUpperCase();
 
-                }
-            );
+                buildingLayer.appendChild(img);
+
+            }
+        );
 
     }
 
 
     /* =====================================================
-       PLOT SELECTION
+       EVENTS
     ===================================================== */
 
-    function selectPlot(id) {
+    function setupEvents() {
 
-        id = Number(id);
 
-        state.selectedPlot = id;
+        /*
+        NAVIGATION
+        */
 
         document
-            .querySelectorAll(".plot.selected")
-            .forEach(
-                el =>
-                    el.classList.remove("selected")
+            .querySelectorAll(".nav-button")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const panel =
+                            button.dataset.panel;
+
+                        switchPanel(panel);
+
+                    }
+                );
+
+            });
+
+
+        /*
+        MAP CLICK
+        */
+
+        plotGrid.addEventListener(
+            "click",
+            event => {
+
+                const plot =
+                    event.target.closest(".plot");
+
+                if (!plot) return;
+
+                const id =
+                    Number(
+                        plot.dataset.plotId
+                    );
+
+                selectPlot(id);
+
+            }
+        );
+
+
+        /*
+        ZOOM
+        */
+
+        $("zoomIn").addEventListener(
+            "click",
+            () => {
+
+                zoom =
+                    Math.min(
+                        1.8,
+                        zoom + .1
+                    );
+
+                updateZoom();
+
+            }
+        );
+
+
+        $("zoomOut").addEventListener(
+            "click",
+            () => {
+
+                zoom =
+                    Math.max(
+                        .7,
+                        zoom - .1
+                    );
+
+                updateZoom();
+
+            }
+        );
+
+
+        /*
+        CLOSE LAND MODAL
+        */
+
+        $("closeLandModal")
+            .addEventListener(
+                "click",
+                () => {
+
+                    closeModal(
+                        landModal
+                    );
+
+                }
             );
 
-        const plot =
-            document.querySelector(
-                `.plot[data-plot-id="${id}"]`
+
+        /*
+        CLOSE BUILD MODAL
+        */
+
+        $("closeBuildModal")
+            .addEventListener(
+                "click",
+                () => {
+
+                    closeModal(
+                        buildModal
+                    );
+
+                }
             );
 
-        if (plot) {
 
-            plot.classList.add("selected");
+        /*
+        BUILDING
+        */
 
-        }
+        document
+            .querySelectorAll(".build-option")
+            .forEach(button => {
 
-        renderSelectedPlot();
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        build(
+                            button.dataset.build
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /*
+        MARKET
+        */
+
+        document
+            .querySelectorAll("[data-sell]")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        sellResource(
+                            button.dataset.sell
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /*
+        WORK
+        */
+
+        document
+            .querySelectorAll("[data-job]")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        work(
+                            button.dataset.job
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /*
+        BANK
+        */
+
+        $("depositButton")
+            .addEventListener(
+                "click",
+                deposit
+            );
+
+
+        $("withdrawButton")
+            .addEventListener(
+                "click",
+                withdraw
+            );
+
+
+        /*
+        CITY
+        */
+
+        $("upgradeCity")
+            .addEventListener(
+                "click",
+                upgradeCity
+            );
+
+
+        /*
+        CLOSE MODALS BY BACKGROUND
+        */
+
+        [landModal, buildModal]
+            .forEach(modal => {
+
+                modal.addEventListener(
+                    "click",
+                    event => {
+
+                        if (
+                            event.target === modal
+                        ) {
+
+                            closeModal(modal);
+
+                        }
+
+                    }
+                );
+
+            });
 
     }
 
 
-    function renderSelectedPlot() {
+    /* =====================================================
+       PANEL SWITCH
+    ===================================================== */
 
-        const title =
-            $("selectedTitle");
+    function switchPanel(panel) {
 
-        const description =
-            $("selectedDescription");
+        document
+            .querySelectorAll(".nav-button")
+            .forEach(button => {
 
-        const info =
-            $("selectedInfo");
+                button.classList.toggle(
+                    "active",
+                    button.dataset.panel === panel
+                );
 
-        const actions =
-            $("landActions");
-
-
-        if (
-            state.selectedPlot === null
-        ) {
-
-            title.textContent =
-                "Выберите участок";
-
-            description.textContent =
-                "Нажмите на участок территории, чтобы посмотреть информацию.";
-
-            info.innerHTML = "";
-
-            actions.innerHTML = "";
-
-            return;
-
-        }
+            });
 
 
-        const id =
-            state.selectedPlot;
+        document
+            .querySelectorAll(".panel-content")
+            .forEach(content => {
+
+                content.classList.toggle(
+                    "active",
+                    content.dataset.content === panel
+                );
+
+            });
+
+    }
+
+
+    /* =====================================================
+       SELECT LAND
+    ===================================================== */
+
+    function selectPlot(id) {
+
+        selectedPlot = id;
+
+
+        document
+            .querySelectorAll(".plot")
+            .forEach(plot => {
+
+                plot.classList.toggle(
+                    "selected",
+                    Number(plot.dataset.plotId) === id
+                );
+
+            });
+
 
         const owned =
-            state.ownedPlots.includes(id);
+            state.ownedPlots.find(
+                p => p.id === id
+            );
 
 
-        title.textContent =
-            `Участок #${String(id + 1).padStart(4,"0")}`;
-
-        description.textContent =
+        renderLandPanel(
+            id,
             owned
-                ? "Этот участок принадлежит вам."
-                : "Свободный участок территории Vellar.";
+        );
+
+    }
 
 
-        info.innerHTML = `
+    /* =====================================================
+       LAND PANEL
+    ===================================================== */
 
-            <div class="info-row">
-                <span>Площадь</span>
-                <strong>1 га</strong>
-            </div>
+    function renderLandPanel(
+        id,
+        owned
+    ) {
 
-            <div class="info-row">
-                <span>Цена</span>
-                <strong>$10</strong>
-            </div>
-
-            <div class="info-row">
-                <span>Доход</span>
-                <strong>2 VEL / час</strong>
-            </div>
-
-            <div class="info-row">
-                <span>Статус</span>
-                <strong>
-                    ${owned ? "ВАШ" : "СВОБОДЕН"}
-                </strong>
-            </div>
-
-        `;
+        const container =
+            $("selectedLand");
 
 
         if (owned) {
 
-            actions.innerHTML = `
+            const income =
+                owned.area *
+                CONFIG.landIncomePerHa;
 
-                <button
-                    class="action-button secondary"
-                    data-action="plot-income"
-                >
-                    Получить информацию
-                </button>
 
-                <button
-                    class="action-button danger"
-                    data-action="sell-land"
-                >
-                    Продать участок
-                </button>
+            container.innerHTML = `
+
+                <div class="land-card">
+
+                    <div>
+
+                        <div class="land-number">
+                            #${String(id + 1).padStart(4, "0")}
+                        </div>
+
+                        <div style="
+                            color:#4fd18b;
+                            font-size:10px;
+                            margin-top:5px;
+                        ">
+                            OWNED LAND
+                        </div>
+
+                    </div>
+
+
+                    <div class="land-info">
+
+                        <div class="land-info-item">
+
+                            <span>AREA</span>
+
+                            <strong>
+                                ${owned.area} HA
+                            </strong>
+
+                        </div>
+
+
+                        <div class="land-info-item">
+
+                            <span>INCOME</span>
+
+                            <strong>
+                                +${income} VEL/H
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="openBuild"
+                        class="main-button"
+                    >
+                        BUILD
+                    </button>
+
+                </div>
 
             `;
+
+
+            $("openBuild")
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        buildModal
+                            .classList.remove(
+                                "hidden"
+                            );
+
+                    }
+                );
+
 
         } else {
 
-            actions.innerHTML = `
+            container.innerHTML = `
 
-                <button
-                    class="action-button"
-                    data-action="buy-land"
-                >
-                    Купить 1 га — $10
-                </button>
+                <div class="land-card">
 
-                <button
-                    class="action-button secondary"
-                    data-action="buy-2-land"
-                >
-                    Купить 2 га — $20
-                </button>
+                    <div>
 
-                <button
-                    class="action-button secondary"
-                    data-action="buy-4-land"
-                >
-                    Купить 4 га — $40
-                </button>
+                        <div class="land-number">
+                            #${String(id + 1).padStart(4, "0")}
+                        </div>
+
+                        <div style="
+                            color:#7d8594;
+                            font-size:10px;
+                            margin-top:5px;
+                        ">
+                            FREE TERRITORY
+                        </div>
+
+                    </div>
+
+
+                    <div class="land-info">
+
+                        <div class="land-info-item">
+
+                            <span>1 HA</span>
+
+                            <strong>$10</strong>
+
+                        </div>
+
+
+                        <div class="land-info-item">
+
+                            <span>2 HA</span>
+
+                            <strong>$20</strong>
+
+                        </div>
+
+
+                        <div class="land-info-item">
+
+                            <span>4 HA</span>
+
+                            <strong>$40</strong>
+
+                        </div>
+
+
+                        <div class="land-info-item">
+
+                            <span>INCOME</span>
+
+                            <strong>2 VEL/H</strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="main-button"
+                        data-buy-land="1"
+                    >
+                        BUY 1 HA — $10
+                    </button>
+
+
+                    <button
+                        class="secondary-button"
+                        data-buy-land="2"
+                    >
+                        BUY 2 HA — $20
+                    </button>
+
+
+                    <button
+                        class="secondary-button"
+                        data-buy-land="4"
+                    >
+                        BUY 4 HA — $40
+                    </button>
+
+                </div>
 
             `;
+
+
+            container
+                .querySelectorAll(
+                    "[data-buy-land]"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            buyLand(
+                                id,
+                                Number(
+                                    button.dataset.buyLand
+                                )
+                            );
+
+                        }
+                    );
+
+                });
 
         }
 
@@ -794,60 +921,23 @@ document.addEventListener("DOMContentLoaded", () => {
        BUY LAND
     ===================================================== */
 
-    function buyLand(amount) {
-
-        const id =
-            state.selectedPlot;
-
-        if (id === null) {
-
-            toast(
-                "Сначала выберите участок"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            state.ownedPlots.includes(id)
-        ) {
-
-            toast(
-                "Этот участок уже принадлежит вам"
-            );
-
-            return;
-
-        }
-
+    function buyLand(
+        id,
+        area
+    ) {
 
         const price =
-            CONFIG.LAND_PRICES[amount];
-
-
-        /*
-            В тестовой версии
-            покупка земли идёт
-            за тестовый USD-баланс.
-        */
-
-        if (
-            !state.testCash
-        ) {
-
-            state.testCash = 100;
-
-        }
+            CONFIG.landPrices[area];
 
 
         if (
-            state.testCash < price
+            state.ownedPlots.some(
+                plot => plot.id === id
+            )
         ) {
 
-            toast(
-                `Недостаточно тестовых средств. Нужно $${price}.`
+            notify(
+                "Этот участок уже принадлежит вам."
             );
 
             return;
@@ -855,39 +945,303 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        state.testCash -= price;
+        if (state.cash < price) {
+
+            notify(
+                `Недостаточно денег. Нужно $${price}.`
+            );
+
+            return;
+
+        }
 
 
-        const plots = [];
+        state.cash -= price;
 
-        for (
-            let i = 0;
-            i < amount;
-            i++
+
+        state.ownedPlots.push({
+
+            id: id,
+
+            area: area,
+
+            purchasedAt: Date.now()
+
+        });
+
+
+        state.treasury += price;
+
+
+        addEvent(
+            `Гражданин приобрёл ${area} га земли за $${price}.`
+        );
+
+
+        saveState();
+
+        createPlots();
+
+        selectPlot(id);
+
+        updateUI();
+
+        notify(
+            `Участок #${id + 1} приобретён.`
+        );
+
+    }
+
+
+    /* =====================================================
+       PASSIVE LAND INCOME
+    ===================================================== */
+
+    function calculateLandIncome() {
+
+        return state.ownedPlots.reduce(
+            (total, plot) => {
+
+                return total +
+                    plot.area *
+                    CONFIG.landIncomePerHa;
+
+            },
+            0
+        );
+
+    }
+
+
+    function generateIncome() {
+
+        const now = Date.now();
+
+        const elapsed =
+            now - state.lastIncome;
+
+
+        if (elapsed < 3600000) {
+
+            return;
+
+        }
+
+
+        const hours =
+            Math.floor(
+                elapsed / 3600000
+            );
+
+
+        const incomePerHour =
+            calculateLandIncome();
+
+
+        if (incomePerHour > 0) {
+
+            const income =
+                incomePerHour *
+                hours;
+
+
+            state.vel += income;
+
+
+            addEvent(
+                `Земля принесла +${income} VEL.`
+            );
+
+        }
+
+
+        state.lastIncome = now;
+
+        saveState();
+
+    }
+
+
+    /* =====================================================
+       WORK
+    ===================================================== */
+
+    function work(jobType) {
+
+        resetDailyWork();
+
+
+        const job =
+            CONFIG.jobs[jobType];
+
+
+        if (!job) return;
+
+
+        if (
+            state.work.clicks >=
+            job.clicks
         ) {
 
-            const next =
-                id + i;
+            notify(
+                "Сегодня лимит работы уже выполнен."
+            );
 
-            if (
-                next >= CONFIG.TOTAL_PLOTS
-            ) break;
+            return;
 
-            if (
-                !state.ownedPlots.includes(next)
-            ) {
+        }
 
-                plots.push(next);
+
+        state.work.job =
+            jobType;
+
+
+        state.work.clicks++;
+
+
+        if (
+            state.work.clicks >=
+            job.clicks
+        ) {
+
+            state.vel += job.salary;
+
+
+            state.treasury +=
+                Math.floor(
+                    job.salary * .10
+                );
+
+
+            state.population +=
+                Math.random() > .8
+                    ? 1
+                    : 0;
+
+
+            state.economy =
+                Math.min(
+                    100,
+                    state.economy + .3
+                );
+
+
+            addEvent(
+                `${jobType.toUpperCase()}: гражданин получил ${job.salary} VEL.`
+            );
+
+
+            notify(
+                `Рабочая смена завершена. +${job.salary} VEL`
+            );
+
+        }
+
+
+        saveState();
+
+        updateUI();
+
+    }
+
+
+    /* =====================================================
+       RESET DAILY WORK
+    ===================================================== */
+
+    function resetDailyWork() {
+
+        const today =
+            getDayKey();
+
+
+        if (
+            state.work.lastReset !==
+            today
+        ) {
+
+            state.work.clicks = 0;
+
+            state.work.job = null;
+
+            state.work.lastReset =
+                today;
+
+            saveState();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RESOURCES
+    ===================================================== */
+
+    function produceResources() {
+
+        state.buildings.forEach(
+            building => {
+
+                if (
+                    building.type === "farm"
+                ) {
+
+                    state.resources.food += .05;
+
+                }
+
+
+                if (
+                    building.type === "mine"
+                ) {
+
+                    state.resources.ore += .04;
+
+                }
+
+
+                if (
+                    building.type === "factory"
+                ) {
+
+                    state.resources.goods += .03;
+
+                }
 
             }
+        );
 
-        }
+    }
 
 
-        if (!plots.length) {
+    /* =====================================================
+       SELL RESOURCE
+    ===================================================== */
 
-            toast(
-                "Не удалось купить выбранную площадь."
+    function sellResource(type) {
+
+        const prices = {
+
+            food: 2,
+
+            ore: 4,
+
+            goods: 7
+
+        };
+
+
+        const amount =
+            Math.floor(
+                state.resources[type]
+            );
+
+
+        if (amount <= 0) {
+
+            notify(
+                "Недостаточно ресурсов."
             );
 
             return;
@@ -895,125 +1249,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        state.ownedPlots.push(
-            ...plots
-        );
+        const revenue =
+            amount *
+            prices[type];
 
 
-        state.landIncome =
-            state.ownedPlots.length *
-            CONFIG.LAND_INCOME;
-
-
-        addEvent(
-            `Вы приобрели ${plots.length} га территории.`
-        );
-
-
-        save();
-
-        createPlots();
-
-        renderAll();
-
-        selectPlot(id);
-
-        toast(
-            `Приобретено: ${plots.length} га`
-        );
-
-    }
-
-
-    /* =====================================================
-       SELL LAND
-    ===================================================== */
-
-    function sellLand() {
-
-        const id =
-            state.selectedPlot;
-
-        if (id === null) return;
-
-
-        const index =
-            state.ownedPlots.indexOf(id);
-
-        if (index === -1) return;
-
-
-        state.ownedPlots.splice(
-            index,
-            1
-        );
-
-
-        if (!state.testCash) {
-            state.testCash = 0;
-        }
-
-
-        state.testCash += 10;
-
-
-        state.landIncome =
-            state.ownedPlots.length *
-            CONFIG.LAND_INCOME;
-
-
-        addEvent(
-            `Вы продали участок #${id + 1}.`
-        );
-
-
-        save();
-
-        createPlots();
-
-        renderAll();
-
-        selectPlot(id);
-
-        toast(
-            "Участок продан за $10"
-        );
-
-    }
-
-
-    /* =====================================================
-       PASSIVE INCOME
-    ===================================================== */
-
-    function collectPassiveIncome() {
-
-        const income =
-            state.landIncome;
-
-
-        if (
-            income <= 0
-        ) return;
-
-
-        state.vel += income;
+        state.resources[type] -= amount;
 
         state.treasury +=
             Math.floor(
-                income *
-                state.tax /
-                100
+                revenue * .1
+            );
+
+        state.vel +=
+            Math.floor(
+                revenue * .9
+            );
+
+
+        state.economy =
+            Math.min(
+                100,
+                state.economy + .2
             );
 
 
         addEvent(
-            `Земля принесла ${income} VEL.`
+            `Продано ${amount} ед. ресурса за ${revenue} VEL.`
         );
 
-        save();
 
-        renderAll();
+        saveState();
+
+        updateUI();
 
     }
 
@@ -1022,65 +1290,34 @@ document.addEventListener("DOMContentLoaded", () => {
        BANK
     ===================================================== */
 
-    function updateBankInterest() {
+    function deposit() {
 
-        if (
-            !state.bank.balance
-        ) return;
-
-
-        const nowTime =
-            Date.now();
-
-        const hours =
-            (
-                nowTime -
-                state.bank.lastUpdate
-            ) /
-            3600000;
-
-
-        if (hours <= 0) return;
-
-
-        const interest =
-            state.bank.balance *
-            (
-                CONFIG.BANK_APY /
-                100
-            ) *
-            (
-                hours /
-                8760
+        const amount =
+            Number(
+                $("bankAmount").value
             );
 
 
-        state.bank.interest +=
-            interest;
-
-        state.bank.lastUpdate =
-            nowTime;
-
-    }
-
-
-    function depositBank(amount) {
-
-        amount =
-            Number(amount);
-
-
         if (
+            !Number.isFinite(amount) ||
             amount <= 0
-        ) return;
+        ) {
+
+            notify(
+                "Введите корректную сумму."
+            );
+
+            return;
+
+        }
 
 
         if (
             state.vel < amount
         ) {
 
-            toast(
-                "Недостаточно VEL"
+            notify(
+                "Недостаточно VEL."
             );
 
             return;
@@ -1090,40 +1327,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         state.vel -= amount;
 
-        state.bank.balance += amount;
+        state.bank.balance +=
+            amount;
 
-        state.bank.lastUpdate =
+
+        state.bank.lastInterest =
             Date.now();
 
 
-        addEvent(
-            `В банк внесено ${format(amount)} VEL.`
+        saveState();
+
+        updateUI();
+
+        notify(
+            `В банк внесено ${amount} VEL.`
         );
-
-
-        save();
-
-        renderAll();
 
     }
 
 
-    function withdrawBank() {
+    function withdraw() {
 
-        updateBankInterest();
-
-
-        const total =
-            state.bank.balance +
-            state.bank.interest;
+        const amount =
+            Number(
+                $("bankAmount").value
+            );
 
 
         if (
-            total <= 0
+            !Number.isFinite(amount) ||
+            amount <= 0
         ) {
 
-            toast(
-                "На депозите ничего нет."
+            notify(
+                "Введите корректную сумму."
             );
 
             return;
@@ -1131,345 +1368,92 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        state.vel += total;
+        if (
+            state.bank.balance <
+            amount
+        ) {
 
-        state.bank.balance = 0;
+            notify(
+                "Недостаточно средств на депозите."
+            );
 
-        state.bank.interest = 0;
+            return;
 
-        state.bank.lastUpdate =
+        }
+
+
+        state.bank.balance -=
+            amount;
+
+        state.vel +=
+            amount;
+
+
+        saveState();
+
+        updateUI();
+
+        notify(
+            `Выведено ${amount} VEL.`
+        );
+
+    }
+
+
+    function processBankInterest() {
+
+        const now =
             Date.now();
 
 
-        addEvent(
-            `Из банка получено ${format(total)} VEL.`
-        );
-
-
-        save();
-
-        renderAll();
-
-    }
-
-
-    /* =====================================================
-       WORK
-    ===================================================== */
-
-    function resetDailyWork() {
-
-        const day =
-            new Date().toDateString();
+        const elapsed =
+            now -
+            state.bank.lastInterest;
 
 
         if (
-            state.lastWorkDay !== day
+            elapsed <
+            3600000
         ) {
-
-            state.dailyWork = {
-
-                farm: 0,
-
-                factory: 0,
-
-                mine: 0
-
-            };
-
-            state.lastWorkDay =
-                day;
-
-        }
-
-    }
-
-
-    const jobs = {
-
-        farm: {
-
-            name: "Ферма",
-
-            salary: 25,
-
-            icon: "🌾"
-
-        },
-
-        factory: {
-
-            name: "Фабрика",
-
-            salary: 40,
-
-            icon: "🏭"
-
-        },
-
-        mine: {
-
-            name: "Шахта",
-
-            salary: 30,
-
-            icon: "⛏"
-
-        }
-
-    };
-
-
-    function doWork(type) {
-
-        resetDailyWork();
-
-
-        if (
-            state.dailyWork[type] >= 100
-        ) {
-
-            toast(
-                "Лимит 100 кликов на сегодня достигнут."
-            );
 
             return;
 
         }
 
 
-        state.dailyWork[type]++;
+        const hours =
+            Math.floor(
+                elapsed / 3600000
+            );
 
 
         if (
-            state.dailyWork[type] === 100
+            state.bank.balance > 0
         ) {
 
-            const salary =
-                jobs[type].salary;
+            const hourlyRate =
+                CONFIG.bankAPY /
+                100 /
+                8760;
 
 
-            state.vel += salary;
+            const interest =
+                state.bank.balance *
+                hourlyRate *
+                hours;
 
 
-            addEvent(
-                `${jobs[type].name}: получена зарплата ${salary} VEL.`
-            );
-
-
-            toast(
-                `Работа выполнена. +${salary} VEL`
-            );
+            state.bank.balance +=
+                interest;
 
         }
 
 
-        save();
+        state.bank.lastInterest =
+            now;
 
-        renderAll();
 
-    }
-
-
-    /* =====================================================
-       MARKET
-    ===================================================== */
-
-    function sellResource(resource) {
-
-        const prices = {
-
-            food: 5,
-
-            metal: 10,
-
-            goods: 15
-
-        };
-
-
-        const names = {
-
-            food: "Еда",
-
-            metal: "Металл",
-
-            goods: "Товары"
-
-        };
-
-
-        if (
-            state.resources[resource] <= 0
-        ) {
-
-            toast(
-                `У вас нет ресурса: ${names[resource]}`
-            );
-
-            return;
-
-        }
-
-
-        state.resources[resource]--;
-
-
-        const revenue =
-            prices[resource];
-
-
-        state.vel += revenue;
-
-
-        addEvent(
-            `${names[resource]} проданы за ${revenue} VEL.`
-        );
-
-
-        save();
-
-        renderAll();
-
-    }
-
-
-    /* =====================================================
-       BUILDING
-    ===================================================== */
-
-    function buildBuilding(type) {
-
-        const costs = {
-
-            farm: 300,
-
-            factory: 600,
-
-            mine: 500
-
-        };
-
-
-        const data = {
-
-            farm: {
-
-                name: "Частная ферма",
-
-                emoji: "🌾"
-
-            },
-
-            factory: {
-
-                name: "Частная фабрика",
-
-                emoji: "🏭"
-
-            },
-
-            mine: {
-
-                name: "Частная шахта",
-
-                emoji: "⛏"
-
-            }
-
-        };
-
-
-        const cost =
-            costs[type];
-
-
-        if (
-            state.vel < cost
-        ) {
-
-            toast(
-                `Нужно ${cost} VEL`
-            );
-
-            return;
-
-        }
-
-
-        state.vel -= cost;
-
-
-        const index =
-            state.playerBuildings.length;
-
-
-        const positions = [
-
-            [200,120],
-
-            [250,150],
-
-            [600,150],
-
-            [650,180],
-
-            [200,400],
-
-            [650,400],
-
-            [350,450],
-
-            [500,450]
-
-        ];
-
-
-        const position =
-            positions[
-                index %
-                positions.length
-            ];
-
-
-        state.playerBuildings.push({
-
-            type,
-
-            name:
-                `${data[type].name} #${index + 1}`,
-
-            emoji:
-                data[type].emoji,
-
-            x:
-                position[0],
-
-            y:
-                position[1]
-
-        });
-
-
-        state.development += 1;
-
-        state.economy += 1;
-
-
-        addEvent(
-            `Построено предприятие: ${data[type].name}.`
-        );
-
-
-        save();
-
-        renderBuildings();
-
-        renderAll();
-
-        toast(
-            `${data[type].name} построена`
-        );
+        saveState();
 
     }
 
@@ -1481,16 +1465,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function upgradeCity() {
 
         const cost =
-            1000 *
-            state.development;
+            1000 +
+            state.development *
+            1000;
 
 
         if (
             state.vel < cost
         ) {
 
-            toast(
-                `Нужно ${format(cost)} VEL`
+            notify(
+                `Нужно ${cost} VEL.`
             );
 
             return;
@@ -1502,9 +1487,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         state.development++;
 
-        state.economy += 3;
-
-        state.treasury += 250;
+        state.economy =
+            Math.min(
+                100,
+                state.economy + 5
+            );
 
 
         addEvent(
@@ -1512,12 +1499,170 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        save();
+        saveState();
 
-        renderAll();
+        updateUI();
 
-        toast(
-            "Городская инфраструктура улучшена"
+        notify(
+            "City Hall улучшен."
+        );
+
+    }
+
+
+    /* =====================================================
+       BUILD
+    ===================================================== */
+
+    function build(type) {
+
+        if (
+            selectedPlot === null
+        ) {
+
+            notify(
+                "Сначала выберите участок."
+            );
+
+            return;
+
+        }
+
+
+        const owned =
+            state.ownedPlots.find(
+                plot =>
+                    plot.id === selectedPlot
+            );
+
+
+        if (!owned) {
+
+            notify(
+                "Строить можно только на своей земле."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            state.buildings.some(
+                b =>
+                    b.plotId ===
+                    selectedPlot
+            )
+        ) {
+
+            notify(
+                "На этом участке уже есть здание."
+            );
+
+            return;
+
+        }
+
+
+        const building =
+            CONFIG.buildings[type];
+
+
+        if (!building) return;
+
+
+        if (
+            state.vel <
+            building.price
+        ) {
+
+            notify(
+                `Нужно ${building.price} VEL.`
+            );
+
+            return;
+
+        }
+
+
+        state.vel -=
+            building.price;
+
+
+        const row =
+            Math.floor(
+                selectedPlot /
+                CONFIG.cols
+            );
+
+
+        const col =
+            selectedPlot %
+            CONFIG.cols;
+
+
+        const x =
+            ((col + .5) /
+                CONFIG.cols) *
+            100;
+
+
+        const y =
+            ((row + .5) /
+                CONFIG.rows) *
+            100;
+
+
+        state.buildings.push({
+
+            id:
+                Date.now(),
+
+            type:
+
+                type,
+
+            plotId:
+
+                selectedPlot,
+
+            x:
+
+                x,
+
+            y:
+
+                y
+
+        });
+
+
+        state.development++;
+
+        state.economy =
+            Math.min(
+                100,
+                state.economy + 1
+            );
+
+
+        addEvent(
+            `Построено здание: ${type.toUpperCase()}.`
+        );
+
+
+        saveState();
+
+        renderBuildings();
+
+        closeModal(
+            buildModal
+        );
+
+        updateUI();
+
+        notify(
+            `${type.toUpperCase()} построен.`
         );
 
     }
@@ -1527,693 +1672,224 @@ document.addEventListener("DOMContentLoaded", () => {
        EVENTS
     ===================================================== */
 
-    const randomEvents = [
+    function addEvent(text) {
 
-        {
-            text:
-                "Рост производства",
+        state.events.unshift({
 
-            effect:
-                () => {
+            text: text,
 
-                    state.economy += 2;
+            time: Date.now()
 
-                }
-
-        },
-
-        {
-            text:
-                "Новый приток населения",
-
-            effect:
-                () => {
-
-                    state.population++;
-
-                }
-
-        },
-
-        {
-            text:
-                "Инвестиции в инфраструктуру",
-
-            effect:
-                () => {
-
-                    state.development++;
-
-                }
-
-        },
-
-        {
-            text:
-                "Снижение деловой активности",
-
-            effect:
-                () => {
-
-                    state.economy =
-                        Math.max(
-                            1,
-                            state.economy - 2
-                        );
-
-                }
-
-        }
-
-    ];
+        });
 
 
-    function randomEvent() {
+        state.events =
+            state.events.slice(
+                0,
+                20
+            );
 
-        const event =
-            randomEvents[
-                Math.floor(
-                    Math.random() *
-                    randomEvents.length
-                )
-            ];
+    }
 
 
-        event.effect();
+    function renderEvents() {
+
+        const container =
+            $("eventList");
 
 
-        addEvent(
-            `Событие: ${event.text}`
+        container.innerHTML = "";
+
+
+        state.events.forEach(
+            event => {
+
+                const element =
+                    document.createElement(
+                        "div"
+                    );
+
+                element.className =
+                    "event";
+
+
+                element.innerHTML = `
+
+                    <div>
+                        ${escapeHtml(event.text)}
+                    </div>
+
+                    <div class="event-time">
+                        ${formatTime(event.time)}
+                    </div>
+
+                `;
+
+
+                container.appendChild(
+                    element
+                );
+
+            }
         );
-
-
-        save();
-
-        renderAll();
 
     }
 
 
     /* =====================================================
-       PANELS
+       UI UPDATE
     ===================================================== */
 
-    function openPanel(panel) {
-
-        switch(panel) {
-
-            case "overview":
-
-                showOverview();
-
-                break;
-
-            case "city":
-
-                showCity();
-
-                break;
-
-            case "market":
-
-                showMarket();
-
-                break;
-
-            case "bank":
-
-                showBank();
-
-                break;
-
-            case "work":
-
-                showWork();
-
-                break;
-
-            case "build":
-
-                showBuild();
-
-                break;
-
-            case "events":
-
-                showEvents();
-
-                break;
-
-        }
-
-    }
-
-
-    function showOverview() {
-
-        openModal(`
-
-            <div class="eyebrow">
-                VELLAR
-            </div>
-
-            <h2>Республика Vellar</h2>
-
-            <p>
-                Ваша цифровая территория развивается
-                через землю, производство, работу,
-                рынок и государственные институты.
-            </p>
-
-            <div class="option-grid">
-
-                <div class="option">
-
-                    <div class="option-title">
-                        ${format(state.ownedPlots.length)} га
-                    </div>
-
-                    <div class="option-description">
-                        Ваша территория
-                    </div>
-
-                </div>
-
-                <div class="option">
-
-                    <div class="option-title">
-                        ${format(state.landIncome)} VEL / час
-                    </div>
-
-                    <div class="option-description">
-                        Пассивный доход от земли
-                    </div>
-
-                </div>
-
-                <div class="option">
-
-                    <div class="option-title">
-                        ${state.population}
-                    </div>
-
-                    <div class="option-description">
-                        Население Vellar
-                    </div>
-
-                </div>
-
-            </div>
-
-        `);
-
-    }
-
-
-    function showCity() {
-
-        openModal(`
-
-            <div class="eyebrow">
-                GOVERNMENT
-            </div>
-
-            <h2>City Hall</h2>
-
-            <p>
-                Центральный административный центр Vellar.
-            </p>
-
-            <div class="option-grid">
-
-                <div class="option">
-
-                    <div class="option-title">
-                        Казна
-                    </div>
-
-                    <div class="option-description">
-                        ${format(state.treasury)} VEL
-                    </div>
-
-                </div>
-
-                <div class="option">
-
-                    <div class="option-title">
-                        Экономика
-                    </div>
-
-                    <div class="option-description">
-                        Индекс ${state.economy}
-                    </div>
-
-                </div>
-
-                <div class="option">
-
-                    <div class="option-title">
-                        Развитие
-                    </div>
-
-                    <div class="option-description">
-                        Уровень ${state.development}
-                    </div>
-
-                </div>
-
-                <button
-                    class="action-button"
-                    data-action="upgrade-city"
-                >
-                    Улучшить City Hall
-                </button>
-
-            </div>
-
-        `);
-
-    }
-
-
-    function showMarket() {
-
-        openModal(`
-
-            <div class="eyebrow">
-                MARKET
-            </div>
-
-            <h2>Рынок Vellar</h2>
-
-            <p>
-                Ресурсы предприятий могут быть
-                проданы государству.
-            </p>
-
-            <div class="option-grid">
-
-                <div class="option">
-
-                    <div class="option-title">
-                        🌾 Еда
-                    </div>
-
-                    <div class="option-description">
-                        ${state.resources.food}
-                        шт. · 5 VEL
-                    </div>
-
-                    <button
-                        class="action-button"
-                        data-action="sell-food"
-                    >
-                        Продать
-                    </button>
-
-                </div>
-
-
-                <div class="option">
-
-                    <div class="option-title">
-                        ⛏ Металл
-                    </div>
-
-                    <div class="option-description">
-                        ${state.resources.metal}
-                        шт. · 10 VEL
-                    </div>
-
-                    <button
-                        class="action-button"
-                        data-action="sell-metal"
-                    >
-                        Продать
-                    </button>
-
-                </div>
-
-
-                <div class="option">
-
-                    <div class="option-title">
-                        🏭 Товары
-                    </div>
-
-                    <div class="option-description">
-                        ${state.resources.goods}
-                        шт. · 15 VEL
-                    </div>
-
-                    <button
-                        class="action-button"
-                        data-action="sell-goods"
-                    >
-                        Продать
-                    </button>
-
-                </div>
-
-            </div>
-
-        `);
-
-    }
-
-
-    function showBank() {
-
-        updateBankInterest();
-
-
-        openModal(`
-
-            <div class="eyebrow">
-                VELLAR BANK
-            </div>
-
-            <h2>Государственный банк</h2>
-
-            <p>
-                Текущая ставка:
-                <strong>
-                    ${CONFIG.BANK_APY}% APY
-                </strong>
-            </p>
-
-
-            <div class="option-grid">
-
-                <div class="option">
-
-                    <div class="option-title">
-                        Депозит
-                    </div>
-
-                    <div class="option-description">
-
-                        Основной баланс:
-                        ${format(state.bank.balance)}
-                        VEL
-
-                        <br>
-
-                        Начислено:
-                        ${state.bank.interest.toFixed(2)}
-                        VEL
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    class="action-button"
-                    data-action="deposit-100"
-                >
-                    Положить 100 VEL
-                </button>
-
-
-                <button
-                    class="action-button"
-                    data-action="deposit-500"
-                >
-                    Положить 500 VEL
-                </button>
-
-
-                <button
-                    class="action-button secondary"
-                    data-action="withdraw-bank"
-                >
-                    Забрать депозит
-                </button>
-
-            </div>
-
-        `);
-
-    }
-
-
-    function showWork() {
+    function updateUI() {
 
         resetDailyWork();
 
+        generateIncome();
 
-        openModal(`
+        processBankInterest();
 
-            <div class="eyebrow">
-                LABOR MARKET
-            </div>
+        produceResources();
 
-            <h2>Работа</h2>
 
-            <p>
-                Игроки могут работать на предприятиях.
-                Для выполнения смены необходимо
-                сделать 100 кликов.
-            </p>
+        $("velBalance").textContent =
+            formatNumber(
+                Math.floor(
+                    state.vel
+                )
+            );
 
-            <div class="option-grid">
 
+        $("velIncome").textContent =
+            `${calculateLandIncome()} VEL/h`;
 
-                <div class="option">
 
-                    <div class="option-title">
-                        🌾 Ферма — 25 VEL
-                    </div>
+        $("economyValue").textContent =
+            Math.floor(
+                state.economy
+            );
 
-                    <div class="option-description">
 
-                        Прогресс:
-                        ${state.dailyWork.farm}/100
+        $("citizenId").textContent =
+            state.citizen.id;
 
-                    </div>
 
-                    <button
-                        class="action-button"
-                        data-action="work-farm"
-                    >
-                        Сделать клик
-                    </button>
+        $("population").textContent =
+            state.population;
 
-                </div>
 
+        $("populationText").textContent =
+            state.population;
 
-                <div class="option">
 
-                    <div class="option-title">
-                        🏭 Фабрика — 40 VEL
-                    </div>
+        $("developmentText").textContent =
+            state.development;
 
-                    <div class="option-description">
 
-                        Прогресс:
-                        ${state.dailyWork.factory}/100
+        $("treasuryText").textContent =
+            `${Math.floor(
+                state.treasury
+            )} VEL`;
 
-                    </div>
 
-                    <button
-                        class="action-button"
-                        data-action="work-factory"
-                    >
-                        Сделать клик
-                    </button>
+        $("foodAmount").textContent =
+            Math.floor(
+                state.resources.food
+            );
 
-                </div>
 
+        $("oreAmount").textContent =
+            Math.floor(
+                state.resources.ore
+            );
 
-                <div class="option">
 
-                    <div class="option-title">
-                        ⛏ Шахта — 30 VEL
-                    </div>
+        $("goodsAmount").textContent =
+            Math.floor(
+                state.resources.goods
+            );
 
-                    <div class="option-description">
 
-                        Прогресс:
-                        ${state.dailyWork.mine}/100
+        $("bankBalance").textContent =
+            `${Math.floor(
+                state.bank.balance
+            )} VEL`;
 
-                    </div>
 
-                    <button
-                        class="action-button"
-                        data-action="work-mine"
-                    >
-                        Сделать клик
-                    </button>
+        $("bankApr").textContent =
+            `${CONFIG.bankAPY}%`;
 
-                </div>
 
-            </div>
+        $("workClicks").textContent =
+            state.work.clicks;
 
-        `);
 
-    }
+        const progress =
+            Math.min(
+                100,
+                state.work.clicks
+            );
 
 
-    function showBuild() {
+        $("workProgress")
+            .style.width =
+            `${progress}%`;
 
-        openModal(`
 
-            <div class="eyebrow">
-                DEVELOPMENT
-            </div>
+        renderEvents();
 
-            <h2>Строительство</h2>
 
-            <p>
-                Предприятия покупаются за VEL.
-                Они создают экономическую активность
-                и рабочие места.
-            </p>
+        if (
+            selectedPlot !== null
+        ) {
 
-            <div class="option-grid">
+            const owned =
+                state.ownedPlots.find(
+                    p =>
+                        p.id ===
+                        selectedPlot
+                );
 
 
-                <div class="option">
+            renderLandPanel(
+                selectedPlot,
+                owned
+            );
 
-                    <div class="option-title">
-                        🌾 Ферма
-                    </div>
+        }
 
-                    <div class="option-description">
-                        Стоимость: 300 VEL
-                    </div>
 
-                    <button
-                        class="action-button"
-                        data-action="build-farm"
-                    >
-                        Построить
-                    </button>
-
-                </div>
-
-
-                <div class="option">
-
-                    <div class="option-title">
-                        🏭 Фабрика
-                    </div>
-
-                    <div class="option-description">
-                        Стоимость: 600 VEL
-                    </div>
-
-                    <button
-                        class="action-button"
-                        data-action="build-factory"
-                    >
-                        Построить
-                    </button>
-
-                </div>
-
-
-                <div class="option">
-
-                    <div class="option-title">
-                        ⛏ Шахта
-                    </div>
-
-                    <div class="option-description">
-                        Стоимость: 500 VEL
-                    </div>
-
-                    <button
-                        class="action-button"
-                        data-action="build-mine"
-                    >
-                        Построить
-                    </button>
-
-                </div>
-
-            </div>
-
-        `);
-
-    }
-
-
-    function showEvents() {
-
-        openModal(`
-
-            <div class="eyebrow">
-                EVENTS
-            </div>
-
-            <h2>События Vellar</h2>
-
-            <p>
-                Экономические события влияют
-                на развитие государства.
-            </p>
-
-            <button
-                class="action-button"
-                data-action="random-event"
-            >
-                Создать тестовое событие
-            </button>
-
-            <div
-                style="
-                    margin-top:20px;
-                    color:#7d8999;
-                    font-size:11px;
-                "
-            >
-
-                Последние события:
-
-            </div>
-
-            <div style="margin-top:10px">
-
-                ${
-                    state.events
-                    .slice(0,10)
-                    .map(
-                        e =>
-                            `<div class="activity">
-                                ${e.time} — ${e.text}
-                            </div>`
-                    )
-                    .join("")
-                }
-
-            </div>
-
-        `);
+        saveState();
 
     }
 
 
     /* =====================================================
-       MODAL
+       ZOOM
     ===================================================== */
 
-    function openModal(content) {
+    function updateZoom() {
 
-        $("modalContent").innerHTML =
-            content;
+        map.style.transform =
+            `translate(-50%, -50%) scale(${zoom})`;
 
-        $("modalOverlay")
-            .classList.add("visible");
+
+        $("zoomValue").textContent =
+            `${Math.round(
+                zoom * 100
+            )}%`;
 
     }
 
 
-    function closeModal() {
+    /* =====================================================
+       MODALS
+    ===================================================== */
 
-        $("modalOverlay")
-            .classList.remove("visible");
+    function closeModal(modal) {
+
+        modal.classList.add(
+            "hidden"
+        );
 
     }
 
@@ -2222,565 +1898,176 @@ document.addEventListener("DOMContentLoaded", () => {
        TOAST
     ===================================================== */
 
-    function toast(message) {
-
-        const container =
-            $("toastContainer");
+    let toastTimer = null;
 
 
-        const element =
-            document.createElement("div");
+    function notify(message) {
 
-        element.className =
-            "toast";
-
-        element.textContent =
+        toastText.textContent =
             message;
 
 
-        container.appendChild(
-            element
+        toast.classList.add(
+            "show"
         );
 
 
-        setTimeout(
-            () => {
-
-                element.remove();
-
-            },
-            3000
+        clearTimeout(
+            toastTimer
         );
+
+
+        toastTimer =
+            setTimeout(
+                () => {
+
+                    toast.classList.remove(
+                        "show"
+                    );
+
+                },
+                2200
+            );
 
     }
 
 
     /* =====================================================
-       EVENTS LOG
+       HELPERS
     ===================================================== */
 
-    function addEvent(text) {
+    function getDayKey() {
 
-        state.events.unshift({
-
-            time: now(),
-
-            text
-
-        });
+        const date =
+            new Date();
 
 
-        if (
-            state.events.length > 50
-        ) {
+        return [
+            date.getFullYear(),
 
-            state.events =
-                state.events.slice(0,50);
+            date.getMonth(),
 
-        }
+            date.getDate()
 
-        renderActivity();
+        ].join("-");
 
     }
 
 
-    function renderActivity() {
+    function formatNumber(number) {
 
-        const log =
-            $("activityLog");
-
-
-        if (!state.events.length) {
-
-            log.innerHTML = `
-                <div class="activity">
-                    Пока нет событий.
-                </div>
-            `;
-
-            return;
-
-        }
-
-
-        log.innerHTML =
-            state.events
-                .slice(0,8)
-                .map(
-                    event => `
-
-                        <div class="activity">
-
-                            <span class="activity-time">
-                                ${event.time}
-                            </span>
-
-                            <br>
-
-                            ${event.text}
-
-                        </div>
-
-                    `
-                )
-                .join("");
+        return Number(
+            number
+        ).toLocaleString(
+            "ru-RU"
+        );
 
     }
 
 
-    /* =====================================================
-       RENDER
-    ===================================================== */
+    function formatTime(timestamp) {
 
-    function renderAll() {
-
-        updateBankInterest();
-
-        resetDailyWork();
-
-
-        state.landIncome =
-            state.ownedPlots.length *
-            CONFIG.LAND_INCOME;
-
-
-        $("velBalance").textContent =
-            format(state.vel);
-
-
-        $("velIncome").textContent =
-            `${format(state.landIncome)}/h`;
-
-
-        $("economyValue").textContent =
-            state.economy;
-
-
-        $("citizenId").textContent =
-            state.citizen.id;
-
-
-        $("populationValue").textContent =
-            state.population;
-
-
-        $("landValue").textContent =
-            `${state.ownedPlots.length} / 1000 га`;
-
-
-        $("treasuryValue").textContent =
-            `${format(state.treasury)} VEL`;
-
-
-        $("taxValue").textContent =
-            `${state.tax}%`;
-
-
-        $("developmentValue").textContent =
-            state.development;
-
-
-        $("overviewLand").textContent =
-            state.ownedPlots.length;
-
-
-        $("overviewIncome").textContent =
-            format(state.landIncome);
-
-
-        $("overviewEconomy").textContent =
-            state.economy;
-
-
-        $("overviewDevelopment").textContent =
-            state.development;
-
-
-        $("zoomValue").textContent =
-            `${state.zoom}%`;
-
-
-        $("map").style.transform =
-            `scale(${state.zoom / 100})`;
-
-
-        renderActivity();
-
-        renderSelectedPlot();
+        return new Date(
+            timestamp
+        ).toLocaleTimeString(
+            "ru-RU",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
 
     }
 
 
-    /* =====================================================
-       NAVIGATION EVENTS
-    ===================================================== */
-
-    document
-        .querySelectorAll(".nav-button")
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        document
-                            .querySelectorAll(
-                                ".nav-button"
-                            )
-                            .forEach(
-                                b =>
-                                    b.classList.remove(
-                                        "active"
-                                    )
-                            );
-
-                        button.classList.add(
-                            "active"
-                        );
-
-
-                        openPanel(
-                            button.dataset.panel
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-    /* =====================================================
-       MAP CLICK EVENT
-    ===================================================== */
-
-    $("plotLayer")
-        .addEventListener(
-            "click",
-            event => {
-
-                const plot =
-                    event.target.closest(
-                        ".plot"
-                    );
-
-                if (!plot) return;
-
-                selectPlot(
-                    plot.dataset.plotId
-                );
-
-            }
-        );
-
-
-    /* =====================================================
-       ACTION DELEGATION
-    ===================================================== */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            const action =
-                event.target.closest(
-                    "[data-action]"
-                );
-
-
-            if (!action) return;
-
-
-            const type =
-                action.dataset.action;
-
-
-            switch(type) {
-
-                case "buy-land":
-
-                    buyLand(1);
-
-                    break;
-
-
-                case "buy-2-land":
-
-                    buyLand(2);
-
-                    break;
-
-
-                case "buy-4-land":
-
-                    buyLand(4);
-
-                    break;
-
-
-                case "sell-land":
-
-                    sellLand();
-
-                    break;
-
-
-                case "plot-income":
-
-                    toast(
-                        `Доход участка: ${CONFIG.LAND_INCOME} VEL/час`
-                    );
-
-                    break;
-
-
-                case "deposit-100":
-
-                    depositBank(100);
-
-                    break;
-
-
-                case "deposit-500":
-
-                    depositBank(500);
-
-                    break;
-
-
-                case "withdraw-bank":
-
-                    withdrawBank();
-
-                    break;
-
-
-                case "work-farm":
-
-                    doWork("farm");
-
-                    break;
-
-
-                case "work-factory":
-
-                    doWork("factory");
-
-                    break;
-
-
-                case "work-mine":
-
-                    doWork("mine");
-
-                    break;
-
-
-                case "sell-food":
-
-                    sellResource("food");
-
-                    break;
-
-
-                case "sell-metal":
-
-                    sellResource("metal");
-
-                    break;
-
-
-                case "sell-goods":
-
-                    sellResource("goods");
-
-                    break;
-
-
-                case "build-farm":
-
-                    buildBuilding("farm");
-
-                    break;
-
-
-                case "build-factory":
-
-                    buildBuilding("factory");
-
-                    break;
-
-
-                case "build-mine":
-
-                    buildBuilding("mine");
-
-                    break;
-
-
-                case "upgrade-city":
-
-                    upgradeCity();
-
-                    break;
-
-
-                case "random-event":
-
-                    randomEvent();
-
-                    break;
-
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       MODAL EVENTS
-    ===================================================== */
-
-    $("closeModal")
-        .addEventListener(
-            "click",
-            closeModal
-        );
-
-
-    $("modalOverlay")
-        .addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target ===
-                    $("modalOverlay")
-                ) {
-
-                    closeModal();
-
-                }
-
-            }
-        );
-
-
-    /* =====================================================
-       ZOOM
-    ===================================================== */
-
-    $("zoomIn")
-        .addEventListener(
-            "click",
-            () => {
-
-                state.zoom =
-                    Math.min(
-                        140,
-                        state.zoom + 10
-                    );
-
-                renderAll();
-
-            }
-        );
-
-
-    $("zoomOut")
-        .addEventListener(
-            "click",
-            () => {
-
-                state.zoom =
-                    Math.max(
-                        70,
-                        state.zoom - 10
-                    );
-
-                renderAll();
-
-            }
-        );
-
-
-    /* =====================================================
-       RESET
-    ===================================================== */
-
-    $("resetGame")
-        .addEventListener(
-            "click",
-            () => {
-
-                const confirmed =
-                    confirm(
-                        "Сбросить весь тестовый прогресс Vellar?"
-                    );
-
-
-                if (!confirmed) return;
-
-
-                localStorage.removeItem(
-                    CONFIG.STORAGE_KEY
-                );
-
-
-                location.reload();
-
-            }
-        );
+    function escapeHtml(text) {
+
+        return String(text)
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
 
 
     /* =====================================================
        GAME LOOP
     ===================================================== */
 
-    setInterval(
-        () => {
+    function startGameLoop() {
 
-            collectPassiveIncome();
+        setInterval(
+            () => {
 
-        },
-        60 * 60 * 1000
-    );
+                generateIncome();
+
+                processBankInterest();
+
+                produceResources();
+
+                updateUI();
+
+            },
+            10000
+        );
+
+    }
 
 
     /*
-        Для теста доход обновляем также
-        при открытии страницы.
+    ========================================================
+    DEBUG
+    ========================================================
     */
 
-    setInterval(
-        () => {
+    window.VELLAR = {
 
-            updateBankInterest();
+        state,
 
-            save();
+        reset: () => {
+
+            localStorage.removeItem(
+                CONFIG.storageKey
+            );
+
+            location.reload();
 
         },
-        10000
-    );
 
+        addVEL: amount => {
 
-    /* =====================================================
-       START
-    ===================================================== */
+            state.vel +=
+                Number(amount);
 
-    load();
+            saveState();
 
-    createPlots();
+            updateUI();
 
-    renderBuildings();
+        }
 
-    renderAll();
+    };
 
-    selectPlot(null);
-
-    addEvent(
-        "Vellar запущен. Добро пожаловать, Founder."
-    );
 
 });
